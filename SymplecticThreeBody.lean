@@ -78,6 +78,10 @@ instance : SMul ℝ Vec3 := ⟨fun c u => ⟨c * u.x, c * u.y, c * u.z⟩⟩
    u.z * v.x - u.x * v.z,
    u.x * v.y - u.y * v.x⟩
 
+@[simp] theorem cross_x (u v : Vec3) : (cross u v).x = u.y * v.z - u.z * v.y := rfl
+@[simp] theorem cross_y (u v : Vec3) : (cross u v).y = u.z * v.x - u.x * v.z := rfl
+@[simp] theorem cross_z (u v : Vec3) : (cross u v).z = u.x * v.y - u.y * v.x := rfl
+
 theorem cross_self (u : Vec3) : cross u u = 0 := by
   ext <;> simp <;> ring
 
@@ -101,7 +105,7 @@ end Vec3
 
 theorem triangle_closure (q₁ q₂ q₃ : Vec3) :
     relVec q₁ q₂ + relVec q₂ q₃ + relVec q₃ q₁ = 0 := by
-  ext <;> simp <;> ring
+  ext <;> simp
 
 theorem interconnected_two_body_decomposition
     (q₁ q₂ q₃ : Vec3) (m₁ m₂ m₃ κ₁₂ κ₂₃ κ₃₁ : ℝ) :
@@ -229,6 +233,13 @@ theorem toPairCoords_symplectic (α β : ℝ) (h_sum : α + β = 1) (z w : Phase
   simp [hβ]
   ring
 
+theorem fromPairCoords_symplectic (α β : ℝ) (h_sum : α + β = 1) (cm_z rel_z cm_w rel_w : Phase6) :
+    omega12 (fromPairCoords α β cm_z rel_z) (fromPairCoords α β cm_w rel_w) =
+    omega6 cm_z cm_w + omega6 rel_z rel_w := by
+  have hβ : β = 1 - α := by linarith
+  simp [omega12, fromPairCoords, omega6, Vec3.dot, hβ]
+  ring
+
 @[simp] def driftCM (τ m12_inv : ℝ) (cm : Phase6) : Phase6 :=
   ⟨cm.q + (τ * m12_inv) • cm.p, cm.p⟩
 
@@ -239,21 +250,24 @@ theorem isSymplectic6_driftCM (τ m12_inv : ℝ) :
   ring
 
 def liftPair12 (α β τ m12_inv : ℝ) (D_rel : Phase6 → Phase6) (z : Phase18) : Phase18 :=
-  let (cm, rel) := toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩
+  let cm := (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1
+  let rel := (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2
   let cm' := driftCM τ m12_inv cm
   let rel' := D_rel rel
   let p12' := fromPairCoords α β cm' rel'
   ⟨p12'.q1, p12'.p1, p12'.q2, p12'.p2, z.q3, z.p3⟩
 
 def liftPair23 (α β τ m23_inv : ℝ) (D_rel : Phase6 → Phase6) (z : Phase18) : Phase18 :=
-  let (cm, rel) := toPairCoords α β ⟨z.q2, z.p2, z.q3, z.p3⟩
+  let cm := (toPairCoords α β ⟨z.q2, z.p2, z.q3, z.p3⟩).1
+  let rel := (toPairCoords α β ⟨z.q2, z.p2, z.q3, z.p3⟩).2
   let cm' := driftCM τ m23_inv cm
   let rel' := D_rel rel
   let p23' := fromPairCoords α β cm' rel'
   ⟨z.q1, z.p1, p23'.q1, p23'.p1, p23'.q2, p23'.p2⟩
 
 def liftPair31 (α β τ m31_inv : ℝ) (D_rel : Phase6 → Phase6) (z : Phase18) : Phase18 :=
-  let (cm, rel) := toPairCoords α β ⟨z.q3, z.p3, z.q1, z.p1⟩
+  let cm := (toPairCoords α β ⟨z.q3, z.p3, z.q1, z.p1⟩).1
+  let rel := (toPairCoords α β ⟨z.q3, z.p3, z.q1, z.p1⟩).2
   let cm' := driftCM τ m31_inv cm
   let rel' := D_rel rel
   let p31' := fromPairCoords α β cm' rel'
@@ -263,38 +277,76 @@ theorem pairwise_embedding_symplectic_12
     (α β τ m12_inv : ℝ) (h_sum : α + β = 1)
     {D_rel : Phase6 → Phase6} (h_rel : IsSymplectic6 D_rel) :
     IsSymplectic18 (liftPair12 α β τ m12_inv D_rel) := by
-  intro z w
   have hβ : β = 1 - α := by linarith
+  intro z w
   have hD := h_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2
                    (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2
-  dsimp [liftPair12, omega18]
-  have h_reconstruct :
-    omega6 ⟨(fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2)).q1,
-            (fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2)).p1⟩
-           ⟨(fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2)).q1,
-            (fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2)).p1⟩ +
-    omega6 ⟨(fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2)).q2,
-            (fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2)).p2⟩
-           ⟨(fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2)).q2,
-            (fromPairCoords α β (driftCM τ m12_inv (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).1)
-              (D_rel (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2)).p2⟩ =
-    omega6 (driftCM τ m12_inv (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).1)
-           (driftCM τ m12_inv (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).1) +
-    omega6 (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2)
-           (D_rel (toPairCoords α β ⟨w.q1, w.p1, w.q2, w.p2⟩).2) := by
-    simp [fromPairCoords, omega6, Vec3.dot, hβ]
-    ring
-  rw [h_reconstruct, hD, isSymplectic6_driftCM]
-  have h_split := toPairCoords_symplectic α β h_sum ⟨z.q1, z.p1, z.q2, z.p2⟩ ⟨w.q1, w.p1, w.q2, w.p2⟩
-  dsimp [omega12] at h_split
-  linarith
+  simp [liftPair12, omega18, omega12, fromPairCoords, driftCM, omega6, Vec3.dot, hβ]
+  dsimp [omega6, Vec3.dot] at hD
+  calc
+    (α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) +
+          (1 - α) * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.x) *
+        (α * (w.p1.x + w.p2.x) + (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.x) +
+      (α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) +
+          (1 - α) * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.y) *
+        (α * (w.p1.y + w.p2.y) + (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.y) +
+      (α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) +
+          (1 - α) * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.z) *
+        (α * (w.p1.z + w.p2.z) + (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.z) -
+      ((α * (z.p1.x + z.p2.x) + (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.x) *
+          (α * w.q1.x + (1 - α) * w.q2.x + τ * m12_inv * (w.p1.x + w.p2.x) +
+            (1 - α) * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.x) +
+        (α * (z.p1.y + z.p2.y) + (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.y) *
+          (α * w.q1.y + (1 - α) * w.q2.y + τ * m12_inv * (w.p1.y + w.p2.y) +
+            (1 - α) * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.y) +
+        (α * (z.p1.z + z.p2.z) + (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.z) *
+          (α * w.q1.z + (1 - α) * w.q2.z + τ * m12_inv * (w.p1.z + w.p2.z) +
+            (1 - α) * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.z)) +
+      ((α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) -
+            α * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.x) *
+          ((1 - α) * (w.p1.x + w.p2.x) - (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.x) +
+        (α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) -
+            α * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.y) *
+          ((1 - α) * (w.p1.y + w.p2.y) - (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.y) +
+        (α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) -
+            α * (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.z) *
+          ((1 - α) * (w.p1.z + w.p2.z) - (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.z) -
+        (((1 - α) * (z.p1.x + z.p2.x) - (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.x) *
+            (α * w.q1.x + (1 - α) * w.q2.x + τ * m12_inv * (w.p1.x + w.p2.x) -
+              α * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.x) +
+          ((1 - α) * (z.p1.y + z.p2.y) - (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.y) *
+            (α * w.q1.y + (1 - α) * w.q2.y + τ * m12_inv * (w.p1.y + w.p2.y) -
+              α * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.y) +
+          ((1 - α) * (z.p1.z + z.p2.z) - (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.z) *
+            (α * w.q1.z + (1 - α) * w.q2.z + τ * m12_inv * (w.p1.z + w.p2.z) -
+              α * (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.z)))
+    = (z.q1.x * w.p1.x + z.q1.y * w.p1.y + z.q1.z * w.p1.z - (z.p1.x * w.q1.x + z.p1.y * w.q1.y + z.p1.z * w.q1.z) +
+        (z.q2.x * w.p2.x + z.q2.y * w.p2.y + z.q2.z * w.p2.z - (z.p2.x * w.q2.x + z.p2.y * w.q2.y + z.p2.z * w.q2.z))) +
+      (((D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.x *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.x +
+          (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.y *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.y +
+          (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).q.z *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).p.z -
+        ((D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.x *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.x +
+          (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.y *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.y +
+          (D_rel { q := z.q1 - z.q2, p := (1 - α) • z.p1 - α • z.p2 }).p.z *
+            (D_rel { q := w.q1 - w.q2, p := (1 - α) • w.p1 - α • w.p2 }).q.z)) -
+      ((z.q1.x - z.q2.x) * ((1 - α) * w.p1.x - α * w.p2.x) +
+        (z.q1.y - z.q2.y) * ((1 - α) * w.p1.y - α * w.p2.y) +
+        (z.q1.z - z.q2.z) * ((1 - α) * w.p1.z - α * w.p2.z) -
+        (((1 - α) * z.p1.x - α * z.p2.x) * (w.q1.x - w.q2.x) +
+          ((1 - α) * z.p1.y - α * z.p2.y) * (w.q1.y - w.q2.y) +
+          ((1 - α) * z.p1.z - α * z.p2.z) * (w.q1.z - w.q2.z)))) := by ring
+    _ = (z.q1.x * w.p1.x + z.q1.y * w.p1.y + z.q1.z * w.p1.z - (z.p1.x * w.q1.x + z.p1.y * w.q1.y + z.p1.z * w.q1.z) +
+        (z.q2.x * w.p2.x + z.q2.y * w.p2.y + z.q2.z * w.p2.z - (z.p2.x * w.q2.x + z.p2.y * w.q2.y + z.p2.z * w.q2.z))) + 0 := by
+      rw [hβ] at hD
+      rw [hD]
+      ring
+    _ = z.q1.x * w.p1.x + z.q1.y * w.p1.y + z.q1.z * w.p1.z - (z.p1.x * w.q1.x + z.p1.y * w.q1.y + z.p1.z * w.q1.z) +
+        (z.q2.x * w.p2.x + z.q2.y * w.p2.y + z.q2.z * w.p2.z - (z.p2.x * w.q2.x + z.p2.y * w.q2.y + z.p2.z * w.q2.z)) := by ring
 
 /-! ## Section 5: Exact Conservation of the 9 Poincaré Integrals of Motion -/
 
@@ -355,17 +407,74 @@ theorem totalAngularMomentum_liftPair12_kepler
   have hβ : β = 1 - α := by linarith
   ext
   · simp [liftPair12, hβ]
-    linear_combination
-      ((z.q1.y - z.q2.y) * ((1 - α) * z.p1.z - α * z.p2.z) -
-       (z.q1.z - z.q2.z) * ((1 - α) * z.p1.y - α * z.p2.y)) * hW
+    calc
+      ((α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) +
+            (1 - α) * (f * (z.q1.y - z.q2.y) + g * ((1 - α) * z.p1.y - α * z.p2.y))) *
+          (α * (z.p1.z + z.p2.z) + (fdot * (z.q1.z - z.q2.z) + gdot * ((1 - α) * z.p1.z - α * z.p2.z))) -
+        (α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) +
+            (1 - α) * (f * (z.q1.z - z.q2.z) + g * ((1 - α) * z.p1.z - α * z.p2.z))) *
+          (α * (z.p1.y + z.p2.y) + (fdot * (z.q1.y - z.q2.y) + gdot * ((1 - α) * z.p1.y - α * z.p2.y)))) +
+      ((α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) -
+            α * (f * (z.q1.y - z.q2.y) + g * ((1 - α) * z.p1.y - α * z.p2.y))) *
+          ((1 - α) * (z.p1.z + z.p2.z) - (fdot * (z.q1.z - z.q2.z) + gdot * ((1 - α) * z.p1.z - α * z.p2.z))) -
+        (α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) -
+            α * (f * (z.q1.z - z.q2.z) + g * ((1 - α) * z.p1.z - α * z.p2.z))) *
+          ((1 - α) * (z.p1.y + z.p2.y) - (fdot * (z.q1.y - z.q2.y) + gdot * ((1 - α) * z.p1.y - α * z.p2.y))))
+      = (z.q1.y * z.p1.z - z.q1.z * z.p1.y + (z.q2.y * z.p2.z - z.q2.z * z.p2.y)) +
+        (f * gdot - g * fdot - 1) *
+          ((z.q1.y - z.q2.y) * ((1 - α) * z.p1.z - α * z.p2.z) -
+           (z.q1.z - z.q2.z) * ((1 - α) * z.p1.y - α * z.p2.y)) := by ring
+      _ = (z.q1.y * z.p1.z - z.q1.z * z.p1.y + (z.q2.y * z.p2.z - z.q2.z * z.p2.y)) +
+        (1 - 1) *
+          ((z.q1.y - z.q2.y) * ((1 - α) * z.p1.z - α * z.p2.z) -
+           (z.q1.z - z.q2.z) * ((1 - α) * z.p1.y - α * z.p2.y)) := by rw [hW]
+      _ = z.q1.y * z.p1.z - z.q1.z * z.p1.y + (z.q2.y * z.p2.z - z.q2.z * z.p2.y) := by ring
   · simp [liftPair12, hβ]
-    linear_combination
-      ((z.q1.z - z.q2.z) * ((1 - α) * z.p1.x - α * z.p2.x) -
-       (z.q1.x - z.q2.x) * ((1 - α) * z.p1.z - α * z.p2.z)) * hW
+    calc
+      ((α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) +
+            (1 - α) * (f * (z.q1.z - z.q2.z) + g * ((1 - α) * z.p1.z - α * z.p2.z))) *
+          (α * (z.p1.x + z.p2.x) + (fdot * (z.q1.x - z.q2.x) + gdot * ((1 - α) * z.p1.x - α * z.p2.x))) -
+        (α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) +
+            (1 - α) * (f * (z.q1.x - z.q2.x) + g * ((1 - α) * z.p1.x - α * z.p2.x))) *
+          (α * (z.p1.z + z.p2.z) + (fdot * (z.q1.z - z.q2.z) + gdot * ((1 - α) * z.p1.z - α * z.p2.z)))) +
+      ((α * z.q1.z + (1 - α) * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) -
+            α * (f * (z.q1.z - z.q2.z) + g * ((1 - α) * z.p1.z - α * z.p2.z))) *
+          ((1 - α) * (z.p1.x + z.p2.x) - (fdot * (z.q1.x - z.q2.x) + gdot * ((1 - α) * z.p1.x - α * z.p2.x))) -
+        (α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) -
+            α * (f * (z.q1.x - z.q2.x) + g * ((1 - α) * z.p1.x - α * z.p2.x))) *
+          ((1 - α) * (z.p1.z + z.p2.z) - (fdot * (z.q1.z - z.q2.z) + gdot * ((1 - α) * z.p1.z - α * z.p2.z))))
+      = (z.q1.z * z.p1.x - z.q1.x * z.p1.z + (z.q2.z * z.p2.x - z.q2.x * z.p2.z)) +
+        (f * gdot - g * fdot - 1) *
+          ((z.q1.z - z.q2.z) * ((1 - α) * z.p1.x - α * z.p2.x) -
+           (z.q1.x - z.q2.x) * ((1 - α) * z.p1.z - α * z.p2.z)) := by ring
+      _ = (z.q1.z * z.p1.x - z.q1.x * z.p1.z + (z.q2.z * z.p2.x - z.q2.x * z.p2.z)) +
+        (1 - 1) *
+          ((z.q1.z - z.q2.z) * ((1 - α) * z.p1.x - α * z.p2.x) -
+           (z.q1.x - z.q2.x) * ((1 - α) * z.p1.z - α * z.p2.z)) := by rw [hW]
+      _ = z.q1.z * z.p1.x - z.q1.x * z.p1.z + (z.q2.z * z.p2.x - z.q2.x * z.p2.z) := by ring
   · simp [liftPair12, hβ]
-    linear_combination
-      ((z.q1.x - z.q2.x) * ((1 - α) * z.p1.y - α * z.p2.y) -
-       (z.q1.y - z.q2.y) * ((1 - α) * z.p1.x - α * z.p2.x)) * hW
+    calc
+      ((α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) +
+            (1 - α) * (f * (z.q1.x - z.q2.x) + g * ((1 - α) * z.p1.x - α * z.p2.x))) *
+          (α * (z.p1.y + z.p2.y) + (fdot * (z.q1.y - z.q2.y) + gdot * ((1 - α) * z.p1.y - α * z.p2.y))) -
+        (α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) +
+            (1 - α) * (f * (z.q1.y - z.q2.y) + g * ((1 - α) * z.p1.y - α * z.p2.y))) *
+          (α * (z.p1.x + z.p2.x) + (fdot * (z.q1.x - z.q2.x) + gdot * ((1 - α) * z.p1.x - α * z.p2.x)))) +
+      ((α * z.q1.x + (1 - α) * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) -
+            α * (f * (z.q1.x - z.q2.x) + g * ((1 - α) * z.p1.x - α * z.p2.x))) *
+          ((1 - α) * (z.p1.y + z.p2.y) - (fdot * (z.q1.y - z.q2.y) + gdot * ((1 - α) * z.p1.y - α * z.p2.y))) -
+        (α * z.q1.y + (1 - α) * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) -
+            α * (f * (z.q1.y - z.q2.y) + g * ((1 - α) * z.p1.y - α * z.p2.y))) *
+          ((1 - α) * (z.p1.x + z.p2.x) - (fdot * (z.q1.x - z.q2.x) + gdot * ((1 - α) * z.p1.x - α * z.p2.x))))
+      = (z.q1.x * z.p1.y - z.q1.y * z.p1.x + (z.q2.x * z.p2.y - z.q2.y * z.p2.x)) +
+        (f * gdot - g * fdot - 1) *
+          ((z.q1.x - z.q2.x) * ((1 - α) * z.p1.y - α * z.p2.y) -
+           (z.q1.y - z.q2.y) * ((1 - α) * z.p1.x - α * z.p2.x)) := by ring
+      _ = (z.q1.x * z.p1.y - z.q1.y * z.p1.x + (z.q2.x * z.p2.y - z.q2.y * z.p2.x)) +
+        (1 - 1) *
+          ((z.q1.x - z.q2.x) * ((1 - α) * z.p1.y - α * z.p2.y) -
+           (z.q1.y - z.q2.y) * ((1 - α) * z.p1.x - α * z.p2.x)) := by rw [hW]
+      _ = z.q1.x * z.p1.y - z.q1.y * z.p1.x + (z.q2.x * z.p2.y - z.q2.y * z.p2.x) := by ring
 
 theorem barycentricMoment_step12
     (m1 m2 m3 α β τ m12_inv : ℝ)
@@ -382,20 +491,53 @@ theorem barycentricMoment_step12
     _ = 1 := h_sum
   ext
   · simp [barycentricMoment, liftPair12]
-    linear_combination
-      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x - z.q1.x + z.q2.x) * hm_eq +
-      τ * (z.p1.x + z.p2.x) * hm_sum +
-      (m1 * z.q1.x + m2 * z.q2.x) * h_sum
+    calc
+      m1 * (α * z.q1.x + β * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) +
+            β * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x) +
+      m2 * (α * z.q1.x + β * z.q2.x + τ * m12_inv * (z.p1.x + z.p2.x) -
+            α * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x) +
+      m3 * z.q3.x
+      = m1 * z.q1.x + m2 * z.q2.x + m3 * z.q3.x + τ * (z.p1.x + z.p2.x) +
+        (m1 * β - m2 * α) * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x - z.q1.x + z.q2.x) +
+        ((m1 + m2) * m12_inv - 1) * (τ * (z.p1.x + z.p2.x)) +
+        (α + β - 1) * (m1 * z.q1.x + m2 * z.q2.x) := by ring
+      _ = m1 * z.q1.x + m2 * z.q2.x + m3 * z.q3.x + τ * (z.p1.x + z.p2.x) +
+        0 * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x - z.q1.x + z.q2.x) +
+        (1 - 1) * (τ * (z.p1.x + z.p2.x)) +
+        (1 - 1) * (m1 * z.q1.x + m2 * z.q2.x) := by rw [hm_eq, hm_sum, h_sum]
+      _ = m1 * z.q1.x + m2 * z.q2.x + m3 * z.q3.x + τ * (z.p1.x + z.p2.x) := by ring
   · simp [barycentricMoment, liftPair12]
-    linear_combination
-      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y - z.q1.y + z.q2.y) * hm_eq +
-      τ * (z.p1.y + z.p2.y) * hm_sum +
-      (m1 * z.q1.y + m2 * z.q2.y) * h_sum
+    calc
+      m1 * (α * z.q1.y + β * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) +
+            β * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y) +
+      m2 * (α * z.q1.y + β * z.q2.y + τ * m12_inv * (z.p1.y + z.p2.y) -
+            α * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y) +
+      m3 * z.q3.y
+      = m1 * z.q1.y + m2 * z.q2.y + m3 * z.q3.y + τ * (z.p1.y + z.p2.y) +
+        (m1 * β - m2 * α) * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y - z.q1.y + z.q2.y) +
+        ((m1 + m2) * m12_inv - 1) * (τ * (z.p1.y + z.p2.y)) +
+        (α + β - 1) * (m1 * z.q1.y + m2 * z.q2.y) := by ring
+      _ = m1 * z.q1.y + m2 * z.q2.y + m3 * z.q3.y + τ * (z.p1.y + z.p2.y) +
+        0 * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y - z.q1.y + z.q2.y) +
+        (1 - 1) * (τ * (z.p1.y + z.p2.y)) +
+        (1 - 1) * (m1 * z.q1.y + m2 * z.q2.y) := by rw [hm_eq, hm_sum, h_sum]
+      _ = m1 * z.q1.y + m2 * z.q2.y + m3 * z.q3.y + τ * (z.p1.y + z.p2.y) := by ring
   · simp [barycentricMoment, liftPair12]
-    linear_combination
-      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z - z.q1.z + z.q2.z) * hm_eq +
-      τ * (z.p1.z + z.p2.z) * hm_sum +
-      (m1 * z.q1.z + m2 * z.q2.z) * h_sum
+    calc
+      m1 * (α * z.q1.z + β * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) +
+            β * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z) +
+      m2 * (α * z.q1.z + β * z.q2.z + τ * m12_inv * (z.p1.z + z.p2.z) -
+            α * (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z) +
+      m3 * z.q3.z
+      = m1 * z.q1.z + m2 * z.q2.z + m3 * z.q3.z + τ * (z.p1.z + z.p2.z) +
+        (m1 * β - m2 * α) * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z - z.q1.z + z.q2.z) +
+        ((m1 + m2) * m12_inv - 1) * (τ * (z.p1.z + z.p2.z)) +
+        (α + β - 1) * (m1 * z.q1.z + m2 * z.q2.z) := by ring
+      _ = m1 * z.q1.z + m2 * z.q2.z + m3 * z.q3.z + τ * (z.p1.z + z.p2.z) +
+        0 * ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z - z.q1.z + z.q2.z) +
+        (1 - 1) * (τ * (z.p1.z + z.p2.z)) +
+        (1 - 1) * (m1 * z.q1.z + m2 * z.q2.z) := by rw [hm_eq, hm_sum, h_sum]
+      _ = m1 * z.q1.z + m2 * z.q2.z + m3 * z.q3.z + τ * (z.p1.z + z.p2.z) := by ring
 
 /-! ## Section 6: Time-Reversibility of the Symmetric Pairwise Map -/
 
