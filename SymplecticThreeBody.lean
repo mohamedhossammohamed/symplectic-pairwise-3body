@@ -383,16 +383,19 @@ theorem barycentricMoment_step12
   ext
   · simp [barycentricMoment, liftPair12]
     linear_combination
-      (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x * hm_eq +
-      τ * (z.p1.x + z.p2.x) * hm_sum
+      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.x - z.q1.x + z.q2.x) * hm_eq +
+      τ * (z.p1.x + z.p2.x) * hm_sum +
+      (m1 * z.q1.x + m2 * z.q2.x) * h_sum
   · simp [barycentricMoment, liftPair12]
     linear_combination
-      (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y * hm_eq +
-      τ * (z.p1.y + z.p2.y) * hm_sum
+      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.y - z.q1.y + z.q2.y) * hm_eq +
+      τ * (z.p1.y + z.p2.y) * hm_sum +
+      (m1 * z.q1.y + m2 * z.q2.y) * h_sum
   · simp [barycentricMoment, liftPair12]
     linear_combination
-      (D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z * hm_eq +
-      τ * (z.p1.z + z.p2.z) * hm_sum
+      ((D_rel (toPairCoords α β ⟨z.q1, z.p1, z.q2, z.p2⟩).2).q.z - z.q1.z + z.q2.z) * hm_eq +
+      τ * (z.p1.z + z.p2.z) * hm_sum +
+      (m1 * z.q1.z + m2 * z.q2.z) * h_sum
 
 /-! ## Section 6: Time-Reversibility of the Symmetric Pairwise Map -/
 
