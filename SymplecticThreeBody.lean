@@ -407,6 +407,7 @@ theorem strang_time_reversible
     IsTimeReversible (fun h z =>
       Φ12 (h / 2) (Φ23 (h / 2) (Φ31 h (Φ23 (h / 2) (Φ12 (h / 2) z))))) := by
   intro h z
+  dsimp only
   have h_neg : -h / 2 = -(h / 2) := by ring
   rw [h_neg]
   rw [h12 (h / 2)]
