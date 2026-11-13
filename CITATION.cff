@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software or formalization, please cite it as below."
+title: "SymplecticThreeBody: Machine-Checked Symplecticity and Nine-Integral Conservation of Pairwise Two-Body Kepler Splitting in Lean 4 and C99"
+version: 1.0.0
+date-released: 2026-11-11
+license: MIT
+repository-code: "https://github.com/MHMZAHRAN/symplectic-pairwise-3body"
+authors:
+  - family-names: "Zahran"
+    given-names: "Mohammad Hossam Mohammed Ali"
+    alias: "MHMZAHRAN"
+    affiliation: "Menoufia National University, Egypt"

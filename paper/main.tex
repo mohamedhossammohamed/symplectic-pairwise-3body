@@ -1,0 +1,49 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+
+\title{\textbf{Machine-Checked Symplecticity, Time-Reversibility, and Nine-Integral Conservation of the Pairwise Two-Body Decomposition for the Gravitational Three-Body Problem in Lean~4}}
+
+\author{
+  \textbf{Mohammad Hossam Mohammed Ali Zahran (\texttt{MHMZAHRAN})}\\
+  Menoufia National University, Egypt\\
+  \texttt{mhmzahran}
+}
+
+\date{November 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Splitting the gravitational $N$-body problem into a composition of exact analytical Two-Body Kepler problems enables collisional orbital integration without coordinate singularities. While Hernandez and Bertschinger (2015) demonstrated numerically via Richardson-extrapolated Jacobian matrices that symmetric compositions of pairwise two-body Kepler propagators are symplectic on the full phase space, a machine-checked mathematical verification of this property and its associated conservation laws has remained absent from formal theorem-proving libraries. In this paper, we present the first complete formalization in the \textbf{Lean~4} theorem prover (paired with a zero-dependency C99 reference implementation) of the Three-Body Problem modeled as three interconnected Two-Body problems. All theorems are proved without \texttt{sorry} axioms.
+\end{abstract}
+
+\section{The Master Interconnected Two-Body System}
+
+Let $\mathbf{r}_{12} = \mathbf{q}_1 - \mathbf{q}_2$, $\mathbf{r}_{23} = \mathbf{q}_2 - \mathbf{q}_3$, $\mathbf{r}_{31} = \mathbf{q}_3 - \mathbf{q}_1$, and $\kappa_{ij} = G / \|\mathbf{r}_{ij}\|^3$.
+
+\begin{theorem}[Master Interconnected Two-Body Decomposition]
+Let $M = m_1 + m_2 + m_3$. Subject to $\mathbf{r}_{12} + \mathbf{r}_{23} + \mathbf{r}_{31} = \mathbf{0}$, the relative acceleration of pair $(1,2)$ satisfies
+\begin{equation}
+  \ddot{\mathbf{r}}_{12} = -M \kappa_{12} \mathbf{r}_{12} + m_3 \Big[ (\kappa_{31} - \kappa_{12})\mathbf{r}_{31} + (\kappa_{23} - \kappa_{12})\mathbf{r}_{23} \Big].
+\end{equation}
+\end{theorem}
+
+\section{Formal Verification of Global Symplecticity on \texorpdfstring{$\mathbb{R}^{18}$}{R18}}
+
+\begin{theorem}[Canonicity of the Pairwise Kepler Embedding]
+For any pair $(i,j)$ with normalized mass weights $\alpha + \beta = 1$, transforming $(\mathbf{q}_i, \mathbf{p}_i, \mathbf{q}_j, \mathbf{p}_j)$ into pair center-of-mass coordinates $(\mathbf{R}_{ij}, \mathbf{P}_{ij})$ and relative Kepler coordinates $(\mathbf{r}_{ij}, \mathbf{p}_{\mathrm{rel},ij})$ preserves the canonical symplectic $2$-form $\omega_{12}$ identically. Consequently, the $5$-stage Strang composition $\Psi_h = \Phi_{h/2}^{(12)} \circ \Phi_{h/2}^{(23)} \circ \Phi_h^{(31)} \circ \Phi_{h/2}^{(23)} \circ \Phi_{h/2}^{(12)}$ preserves $\omega_{18}$ identically, is strictly time-reversible, and conserves all $9$ Poincar\'e momentum, angular momentum, and barycentric boost invariants.
+\end{theorem}
+
+\end{document}

@@ -1,0 +1,11 @@
+build/
+.lake/
+lake-packages/
+*.olean
+*.ilean
+*.trace
+*.aux
+*.log
+*.out
+paper/*.pdf
+.DS_Store

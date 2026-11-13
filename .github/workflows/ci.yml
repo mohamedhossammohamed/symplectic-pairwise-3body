@@ -1,0 +1,56 @@
+name: CI — Lean 4 Proofs & C99 Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  c99-verification:
+    name: C99 Reference Solver & Strict Invariant Assertions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile and run C99 benchmark + strict assertion suite
+        run: make test-c
+
+  lean4-formal-proofs:
+    name: Lean 4 Formal Proof Verification (Zero Sorry)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify no 'sorry' axioms exist in SymplecticThreeBody.lean
+        run: |
+          if grep -n "\bsorry\b" SymplecticThreeBody.lean; then
+            echo "Error: Found 'sorry' in SymplecticThreeBody.lean"
+            exit 1
+          fi
+
+      - name: Run Lean Action (Build + Mathlib Cache)
+        uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: true
+
+  joss-paper-draft:
+    name: Build JOSS Paper PDF
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile JOSS paper via OpenJournals Inara
+        uses: openjournals/inara@main
+        with:
+          args: -o pdf paper/paper.md
+
+      - name: Upload compiled JOSS paper artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: joss-paper-pdf
+          path: paper/paper.pdf
