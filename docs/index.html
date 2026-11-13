@@ -4,425 +4,472 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Symplectic Pairwise Three-Body — Formally Verified Integrator</title>
-  <meta name="description" content="Machine-checked Lean 4 verification and C99 reference engine for pairwise symplectic decomposition of the gravitational three-body problem.">
+  <meta name="description" content="Machine-checked Lean 4 proofs and C99 reference engine for pairwise symplectic decomposition of the gravitational three-body problem. By Mohammad Hossam Mohammed Ali Zahran.">
   <meta name="author" content="Mohammad Hossam Mohammed Ali Zahran">
+  <meta property="og:title" content="SymplecticThreeBody — Formally Verified Integrator">
+  <meta property="og:description" content="Machine-checked Lean 4 verification and IEEE-754 C99 reference engine for the Hernandez–Bertschinger pairwise Kepler decomposition of the three-body problem.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..400&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..500&display=swap" rel="stylesheet">
 
-  <!-- KaTeX -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-    onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-primary: #0a0e17;
-      --bg-surface: #111827;
-      --bg-elevated: #1a2332;
-      --bg-card: #0f1623;
-      --border: #1e293b;
-      --border-subtle: #162032;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.15);
-      --green: #10b981;
-      --green-dim: rgba(16, 185, 129, 0.12);
-      --amber: #f59e0b;
-      --rose: #f43f5e;
-      --cyan: #22d3ee;
-      --violet: #8b5cf6;
-      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-serif: 'Source Serif 4', Georgia, serif;
-      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --stone-50: #fafaf9;
+      --stone-100: #f5f5f4;
+      --stone-200: #e7e5e4;
+      --stone-300: #d6d3d1;
+      --stone-400: #a8a29e;
+      --stone-500: #78716c;
+      --stone-600: #57534e;
+      --stone-700: #44403c;
+      --stone-800: #292524;
+      --stone-900: #1c1917;
+      --stone-950: #0c0a09;
+
+      --bg: #fafaf9;
+      --bg-alt: #ffffff;
+      --text: #1c1917;
+      --text-secondary: #57534e;
+      --text-tertiary: #78716c;
+      --text-faint: #a8a29e;
+      --border: #e7e5e4;
+      --border-strong: #d6d3d1;
+
+      --teal: #0d9488;
+      --teal-bg: #f0fdfa;
+      --teal-border: #ccfbf1;
+      --blue: #2563eb;
+      --blue-bg: #eff6ff;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --rose: #e11d48;
+      --violet: #7c3aed;
+
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --serif: 'Newsreader', 'Georgia', serif;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+      --w: 1080px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
     body {
-      font-family: var(--font-body);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.6;
-      overflow-x: hidden;
+      font-family: var(--sans); background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      line-height: 1.6; font-size: 15px; letter-spacing: -0.01em;
     }
 
-    ::selection { background: var(--accent); color: #fff; }
+    ::selection { background: #dbeafe; }
 
-    /* ─── Navigation ─── */
+    /* ─── Entrance animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── Nav ─── */
     .nav {
       position: sticky; top: 0; z-index: 100;
-      background: rgba(10, 14, 23, 0.85);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border-bottom: 1px solid var(--border-subtle);
-    }
-    .nav-inner {
-      max-width: 1200px; margin: 0 auto;
-      padding: 0 2rem; height: 56px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .nav-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
-    .nav-logo {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--violet));
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-serif); font-weight: 700; font-size: 16px; color: #fff;
-    }
-    .nav-title { font-weight: 700; font-size: 15px; color: var(--text-primary); letter-spacing: -0.02em; }
-    .nav-links { display: flex; align-items: center; gap: 0.25rem; }
-    .nav-links a {
-      padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
-      color: var(--text-secondary); text-decoration: none; transition: all 0.2s;
-    }
-    .nav-links a:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
-    .nav-cta {
-      background: var(--text-primary) !important; color: var(--bg-primary) !important;
-      font-weight: 600 !important;
-    }
-    .nav-cta:hover { opacity: 0.9 !important; }
-    .nav-tag {
-      font-family: var(--font-mono); font-size: 11px; font-weight: 500;
-      padding: 3px 8px; border-radius: 6px;
-      background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.2);
-    }
-
-    /* ─── Hero ─── */
-    .hero {
-      max-width: 1200px; margin: 0 auto; padding: 5rem 2rem 3rem;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
-    }
-    .hero-text { max-width: 560px; }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 100px; font-size: 12px; font-weight: 500;
-      background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(59,130,246,0.2);
-      margin-bottom: 1.25rem;
-    }
-    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-    .hero h1 {
-      font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 2.75rem);
-      font-weight: 700; line-height: 1.2; letter-spacing: -0.025em;
-      color: var(--text-primary); margin-bottom: 1rem;
-    }
-    .hero-sub {
-      font-size: 16px; line-height: 1.7; color: var(--text-secondary);
-      margin-bottom: 1.5rem;
-    }
-    .hero-meta {
-      font-size: 13px; color: var(--text-muted); border-top: 1px solid var(--border);
-      padding-top: 1rem; display: flex; flex-direction: column; gap: 4px;
-    }
-    .hero-meta strong { color: var(--text-secondary); font-weight: 600; }
-
-    .hero-visual {
-      position: relative; display: flex; align-items: center; justify-content: center;
-    }
-    .hero-canvas-wrap {
-      position: relative; width: 100%; aspect-ratio: 1;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-    }
-    .hero-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
-    .canvas-overlay {
-      position: absolute; bottom: 12px; left: 12px; right: 12px;
-      display: flex; justify-content: space-between; align-items: flex-end;
-      pointer-events: none;
-    }
-    .canvas-info {
-      background: rgba(10,14,23,0.8); backdrop-filter: blur(8px);
-      border: 1px solid var(--border); border-radius: 10px;
-      padding: 8px 12px; font-family: var(--font-mono); font-size: 11px;
-      color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;
-      pointer-events: auto;
-    }
-    .canvas-info span { color: var(--text-primary); font-weight: 600; }
-
-    /* ─── Sections ─── */
-    .section { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; }
-    .section-header { margin-bottom: 2.5rem; }
-    .section-label {
-      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--accent); margin-bottom: 0.5rem;
-    }
-    .section-title {
-      font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 700; letter-spacing: -0.02em; color: var(--text-primary);
-    }
-    .section-desc {
-      font-size: 15px; color: var(--text-secondary); margin-top: 0.5rem;
-      max-width: 640px; line-height: 1.7;
-    }
-
-    .divider {
-      max-width: 1200px; margin: 0 auto; padding: 0 2rem;
-      border: none; border-top: 1px solid var(--border-subtle);
-    }
-
-    /* ─── Interactive Workbench ─── */
-    .workbench {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-    }
-    .wb-toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 20px; border-bottom: 1px solid var(--border);
-      background: var(--bg-elevated); flex-wrap: wrap; gap: 12px;
-    }
-    .wb-toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .wb-select {
-      appearance: none; background: var(--bg-card); border: 1px solid var(--border);
-      color: var(--text-primary); font-family: var(--font-mono); font-size: 12px;
-      padding: 6px 28px 6px 10px; border-radius: 8px; cursor: pointer;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-    }
-    .wb-select:focus { outline: none; border-color: var(--accent); }
-    .wb-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-      border: 1px solid var(--border); background: var(--bg-card);
-      color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
-      font-family: var(--font-body);
-    }
-    .wb-btn:hover { border-color: var(--text-muted); color: var(--text-primary); }
-    .wb-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .wb-btn.primary:hover { opacity: 0.9; }
-    .wb-btn.warn { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: var(--amber); }
-    .wb-btn.warn:hover { background: rgba(245,158,11,0.2); }
-    .wb-btn:active { transform: scale(0.97); }
-
-    .wb-body { display: grid; grid-template-columns: 1fr 360px; }
-    .wb-canvas-area {
-      position: relative; background: #000;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 460px;
-    }
-    .wb-canvas-area canvas { width: 100%; height: 100%; display: block; }
-
-    .wb-telemetry {
-      border-left: 1px solid var(--border); padding: 16px;
-      display: flex; flex-direction: column; gap: 0px;
-      background: var(--bg-surface); overflow-y: auto; max-height: 500px;
-    }
-    .tel-header {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-muted);
-      padding: 8px 0 6px; border-bottom: 1px solid var(--border-subtle);
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .tel-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid var(--border-subtle);
-    }
-    .tel-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-    .tel-sublabel { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
-    .tel-value {
-      font-family: var(--font-mono); font-size: 13px; font-weight: 600;
-      text-align: right;
-    }
-    .tel-green { color: var(--green); }
-    .tel-cyan { color: var(--cyan); }
-    .tel-amber { color: var(--amber); }
-
-    .wb-slider-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 0;
-    }
-    .wb-slider-row label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-    .wb-slider-row input[type="range"] {
-      flex: 1; accent-color: var(--accent); height: 4px;
-    }
-    .wb-slider-row .val {
-      font-family: var(--font-mono); font-size: 12px; font-weight: 600;
-      color: var(--text-primary); min-width: 20px; text-align: right;
-    }
-
-    .wb-hint {
-      padding: 10px 0; font-size: 11px; color: var(--text-muted); line-height: 1.5;
-    }
-    .wb-hint strong { color: var(--amber); }
-
-    /* ─── Theorem Table ─── */
-    .thm-table-wrap {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 16px; overflow: hidden;
-    }
-    .thm-table { width: 100%; border-collapse: collapse; }
-    .thm-table thead th {
-      text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--text-muted); background: var(--bg-elevated);
+      background: rgba(250,250,249,0.82);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
       border-bottom: 1px solid var(--border);
     }
-    .thm-table tbody td {
-      padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border-subtle);
+    .nav-inner {
+      max-width: var(--w); margin: 0 auto; padding: 0 2rem;
+      height: 52px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-left { display: flex; align-items: center; gap: 10px; }
+    .nav-wordmark {
+      font-weight: 650; font-size: 14px; color: var(--text);
+      letter-spacing: -0.03em; text-decoration: none;
+    }
+    .nav-sep { width: 1px; height: 16px; background: var(--border-strong); }
+    .nav-subtitle { font-size: 13px; color: var(--text-tertiary); font-weight: 400; }
+    .nav-right { display: flex; align-items: center; gap: 6px; }
+    .nav-link {
+      font-size: 13px; font-weight: 450; color: var(--text-secondary);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+    .nav-gh {
+      font-size: 13px; font-weight: 550; color: var(--bg);
+      background: var(--text); padding: 6px 16px; border-radius: 8px;
+      text-decoration: none; transition: opacity 0.15s;
+    }
+    .nav-gh:hover { opacity: 0.85; }
+
+    /* ─── Containers ─── */
+    .container { max-width: var(--w); margin: 0 auto; padding: 0 2rem; }
+
+    /* ─── Hero ─── */
+    .hero { padding: 6rem 0 4rem; }
+    .hero-inner { display: grid; grid-template-columns: 1fr 420px; gap: 4rem; align-items: center; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      color: var(--teal); margin-bottom: 1.25rem;
+    }
+    .hero-eyebrow .pip {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+    .hero h1 {
+      font-family: var(--serif); font-size: clamp(2.25rem, 4.5vw, 3rem);
+      font-weight: 600; line-height: 1.15; letter-spacing: -0.035em;
+      color: var(--text); margin-bottom: 1.25rem;
+    }
+    .hero-body {
+      font-size: 16.5px; line-height: 1.7; color: var(--text-secondary);
+      margin-bottom: 2rem; max-width: 540px;
+    }
+    .hero-body em { font-family: var(--serif); font-style: italic; color: var(--text); }
+
+    .hero-author {
+      display: flex; flex-direction: column; gap: 3px;
+      font-size: 13px; color: var(--text-tertiary);
+      border-top: 1px solid var(--border); padding-top: 1.25rem;
+    }
+    .hero-author strong { color: var(--text-secondary); font-weight: 550; }
+    .hero-actions { display: flex; gap: 10px; margin-top: 1.75rem; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 550;
+      background: var(--text); color: var(--bg); text-decoration: none;
+      transition: opacity 0.15s; border: none; cursor: pointer;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 20px; border-radius: 9px; font-size: 13.5px; font-weight: 500;
+      background: transparent; color: var(--text-secondary); text-decoration: none;
+      border: 1px solid var(--border-strong); transition: all 0.15s; cursor: pointer;
+    }
+    .btn-secondary:hover { border-color: var(--stone-400); color: var(--text); }
+
+    .hero-vis {
+      position: relative; aspect-ratio: 1; border-radius: 20px;
+      background: var(--stone-950); overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 20px 60px -12px rgba(0,0,0,0.2);
+    }
+    .hero-vis canvas { display: block; width: 100%; height: 100%; }
+    .hero-vis-overlay {
+      position: absolute; bottom: 14px; left: 14px;
+      background: rgba(12,10,9,0.75); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+      padding: 8px 12px; font-family: var(--mono); font-size: 11px;
+      color: rgba(255,255,255,0.5); display: flex; flex-direction: column; gap: 2px;
+    }
+    .hero-vis-overlay span { color: rgba(255,255,255,0.85); font-weight: 500; }
+
+    /* ─── Section rhythm ─── */
+    .section { padding: 5rem 0; }
+    .section + .section { border-top: 1px solid var(--border); }
+
+    .section-eyebrow {
+      font-family: var(--mono); font-size: 11px; font-weight: 550;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-faint); margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-family: var(--serif); font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600; letter-spacing: -0.025em; line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .section-desc {
+      font-size: 15px; color: var(--text-secondary); max-width: 580px;
+      line-height: 1.7;
+    }
+    .section-desc a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .section-desc a:hover { text-decoration: underline; }
+    .section-desc code {
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      background: var(--stone-100); padding: 2px 6px; border-radius: 4px;
+      color: var(--text-secondary);
+    }
+    .section-header { margin-bottom: 2.5rem; }
+
+    /* ─── Workbench ─── */
+    .wb {
+      border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; background: var(--bg-alt);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .wb-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      background: var(--stone-50); flex-wrap: wrap; gap: 10px;
+    }
+    .wb-bar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .wb-sel {
+      appearance: none; font-family: var(--mono); font-size: 12px; font-weight: 500;
+      color: var(--text); background: var(--bg-alt); border: 1px solid var(--border);
+      padding: 5px 28px 5px 10px; border-radius: 7px; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2378716c'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .wb-sel:focus { outline: none; border-color: var(--stone-400); }
+    .wb-bar-right { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .wb-b {
+      font-family: var(--sans); font-size: 12px; font-weight: 550;
+      padding: 5px 14px; border-radius: 7px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg-alt);
+      color: var(--text-secondary); transition: all 0.12s;
+    }
+    .wb-b:hover { border-color: var(--stone-400); color: var(--text); }
+    .wb-b:active { transform: scale(0.97); }
+    .wb-b.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .wb-b.on:hover { opacity: 0.85; }
+    .wb-b.caution { color: var(--amber); border-color: rgba(217,119,6,0.3); background: var(--amber-bg); }
+    .wb-b.caution:hover { border-color: rgba(217,119,6,0.5); }
+
+    .wb-split { display: grid; grid-template-columns: 1fr 340px; }
+    .wb-canvas-col {
+      position: relative; background: var(--stone-950);
+      min-height: 440px; display: flex; align-items: center; justify-content: center;
+    }
+    .wb-canvas-col canvas { display: block; width: 100%; height: 100%; }
+    .wb-hud {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(12,10,9,0.7); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.06); border-radius: 9px;
+      padding: 8px 12px; font-family: var(--mono); font-size: 11px;
+      color: rgba(255,255,255,0.45); display: flex; flex-direction: column; gap: 2px;
+    }
+    .wb-hud span { color: rgba(255,255,255,0.85); font-weight: 500; }
+    .wb-hud .fwd { color: #34d399; }
+    .wb-hud .rev { color: #fbbf24; }
+
+    .wb-panel {
+      border-left: 1px solid var(--border); display: flex; flex-direction: column;
+      background: var(--bg-alt); overflow-y: auto; max-height: 520px;
+    }
+    .wp-head {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 650; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-faint);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .wp-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 16px; border-bottom: 1px solid var(--border);
+    }
+    .wp-row:last-of-type { border-bottom: none; }
+    .wp-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .wp-sub { font-size: 10.5px; color: var(--text-faint); margin-top: 1px; }
+    .wp-val {
+      font-family: var(--mono); font-size: 12.5px; font-weight: 600;
+      text-align: right; white-space: nowrap;
+    }
+    .v-teal { color: var(--teal); }
+    .v-blue { color: var(--blue); }
+    .v-amber { color: var(--amber); }
+
+    .wp-slider {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-top: 1px solid var(--border);
+    }
+    .wp-slider label { font-size: 12px; color: var(--text-faint); white-space: nowrap; }
+    .wp-slider input[type=range] { flex: 1; accent-color: var(--text); height: 3px; }
+    .wp-slider .sv { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); min-width: 20px; text-align: right; }
+
+    .wp-note {
+      padding: 10px 16px; font-size: 11px; color: var(--text-faint); line-height: 1.55;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── Theorem table ─── */
+    .thm-wrap {
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+      background: var(--bg-alt); box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .thm-t { width: 100%; border-collapse: collapse; }
+    .thm-t thead th {
+      text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 650;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-faint); background: var(--stone-50);
+      border-bottom: 1px solid var(--border);
+    }
+    .thm-t tbody td {
+      padding: 12px 16px; font-size: 13.5px; border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
-    .thm-table tbody tr:last-child td { border-bottom: none; }
-    .thm-table tbody tr:hover { background: rgba(255,255,255,0.015); }
-    .thm-id {
-      font-family: var(--font-mono); font-weight: 600; font-size: 12px;
-      color: var(--accent);
-    }
-    .thm-desc { color: var(--text-secondary); line-height: 1.5; }
-    .thm-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
-      color: var(--green); background: var(--green-dim);
-      padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(16,185,129,0.2);
+    .thm-t tbody tr:last-child td { border-bottom: none; }
+    .thm-t tbody tr:hover { background: rgba(0,0,0,0.012); }
+    .t-id { font-family: var(--mono); font-weight: 600; font-size: 12px; color: var(--blue); }
+    .t-desc { color: var(--text-secondary); line-height: 1.55; }
+    .t-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: var(--mono); font-size: 11px; font-weight: 600;
+      color: var(--teal); background: var(--teal-bg);
+      padding: 3px 10px; border-radius: 100px; border: 1px solid var(--teal-border);
       white-space: nowrap;
     }
-    .thm-badge::before { content: '✓'; }
+    .t-badge svg { width: 12px; height: 12px; }
 
-    /* ─── Metrics cards ─── */
-    .metrics-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
+    /* ─── Metrics ─── */
+    .m-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; }
+    .m-card-wrap {
+      background: var(--bg-alt); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
-    .metric-card {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px;
+    .m-card {
+      padding: 24px; display: flex; flex-direction: column;
+      background: var(--bg-alt);
     }
-    .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 8px; }
-    .metric-value {
-      font-family: var(--font-mono); font-size: 22px; font-weight: 700;
-      letter-spacing: -0.02em;
+    .m-label { font-size: 12px; color: var(--text-faint); font-weight: 500; margin-bottom: 10px; }
+    .m-val {
+      font-family: var(--mono); font-size: 20px; font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1;
     }
-    .metric-unit { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-    .mv-green { color: var(--green); }
-    .mv-cyan { color: var(--cyan); }
-    .mv-amber { color: var(--amber); }
+    .m-note { font-size: 11px; color: var(--text-faint); margin-top: 8px; line-height: 1.4; }
 
-    /* ─── Architecture ─── */
-    .arch-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    /* ─── Architecture cards ─── */
+    .arch-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .a-card {
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 28px; background: var(--bg-alt);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .arch-card {
-      background: var(--bg-surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 24px; transition: border-color 0.2s;
-    }
-    .arch-card:hover { border-color: var(--text-muted); }
-    .arch-icon {
-      width: 40px; height: 40px; border-radius: 10px;
+    .a-card:hover { border-color: var(--border-strong); box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+    .a-icon {
+      width: 36px; height: 36px; border-radius: 9px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; margin-bottom: 14px;
+      font-family: var(--serif); font-weight: 700; font-size: 16px;
+      margin-bottom: 16px;
     }
-    .arch-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-    .arch-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-    .arch-card code {
-      font-family: var(--font-mono); font-size: 11px;
-      background: var(--bg-card); padding: 2px 6px; border-radius: 4px;
-      color: var(--text-muted);
+    .a-card h3 { font-size: 15px; font-weight: 650; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .a-card p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+    .a-card code {
+      font-family: var(--mono); font-size: 11.5px; font-weight: 500;
+      background: var(--stone-100); padding: 2px 7px; border-radius: 4px;
+      color: var(--text-tertiary);
     }
+    .a-files { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
 
     /* ─── CTA ─── */
     .cta-section {
-      text-align: center; padding: 5rem 2rem;
-      background: linear-gradient(180deg, var(--bg-primary), var(--bg-surface));
+      padding: 5rem 0; text-align: center;
+      border-top: 1px solid var(--border);
     }
     .cta-section h2 {
-      font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2rem);
-      font-weight: 700; margin-bottom: 0.75rem;
+      font-family: var(--serif); font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600; letter-spacing: -0.02em; margin-bottom: 0.75rem;
     }
-    .cta-section p { color: var(--text-secondary); font-size: 15px; margin-bottom: 2rem; max-width: 480px; margin-left: auto; margin-right: auto; }
-    .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .cta-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
-      text-decoration: none; transition: all 0.2s;
+    .cta-section p {
+      color: var(--text-secondary); font-size: 15px; max-width: 440px;
+      margin: 0 auto 2rem; line-height: 1.7;
     }
-    .cta-btn.filled { background: var(--text-primary); color: var(--bg-primary); }
-    .cta-btn.filled:hover { opacity: 0.9; }
-    .cta-btn.outline {
-      border: 1px solid var(--border); color: var(--text-secondary); background: transparent;
+    .cta-section code {
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      background: var(--stone-100); padding: 2px 7px; border-radius: 4px;
     }
-    .cta-btn.outline:hover { border-color: var(--text-muted); color: var(--text-primary); }
+    .cta-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
     /* ─── Footer ─── */
     .footer {
-      border-top: 1px solid var(--border-subtle);
-      padding: 2.5rem 2rem; text-align: center;
-      font-size: 12px; color: var(--text-muted);
+      border-top: 1px solid var(--border); padding: 2.5rem 2rem;
+      font-size: 12.5px; color: var(--text-faint);
     }
-    .footer a { color: var(--text-secondary); text-decoration: none; }
-    .footer a:hover { color: var(--text-primary); }
+    .footer-inner {
+      max-width: var(--w); margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    .footer a { color: var(--text-tertiary); text-decoration: none; transition: color 0.15s; }
+    .footer a:hover { color: var(--text); }
 
     /* ─── Responsive ─── */
-    @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; gap: 2rem; padding-top: 3rem; }
-      .hero-visual { order: -1; }
-      .wb-body { grid-template-columns: 1fr; }
-      .wb-telemetry { border-left: none; border-top: 1px solid var(--border); max-height: none; }
-      .arch-grid { grid-template-columns: 1fr; }
-      .nav-links a:not(.nav-cta) { display: none; }
+    @media (max-width: 960px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero-vis { max-width: 420px; margin: 0 auto; }
+      .wb-split { grid-template-columns: 1fr; }
+      .wb-panel { border-left: none; border-top: 1px solid var(--border); max-height: none; }
+      .arch-row { grid-template-columns: 1fr; }
+      .m-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-link { display: none; }
     }
     @media (max-width: 600px) {
-      .hero h1 { font-size: 1.75rem; }
-      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .hero { padding: 3.5rem 0 2.5rem; }
+      .hero h1 { font-size: 1.85rem; }
+      .m-grid { grid-template-columns: 1fr; }
     }
 
-    /* Canvas touch */
     canvas { touch-action: none; }
   </style>
 </head>
 <body>
 
-<!-- ═════ NAVIGATION ═════ -->
+<!-- ════ NAV ════ -->
 <nav class="nav">
   <div class="nav-inner">
-    <a href="#" class="nav-brand">
-      <div class="nav-logo">Ω</div>
-      <span class="nav-title">SymplecticThreeBody</span>
-      <span class="nav-tag">v1.0</span>
-    </a>
-    <div class="nav-links">
-      <a href="#workbench">Workbench</a>
-      <a href="#theory">Theory</a>
-      <a href="#results">Results</a>
-      <a href="#architecture">Architecture</a>
-      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" rel="noopener" class="nav-cta cta-btn filled" style="padding:6px 16px; font-size:13px; border-radius:8px;">View on GitHub →</a>
+    <div class="nav-left">
+      <a href="#" class="nav-wordmark">SymplecticThreeBody</a>
+      <div class="nav-sep"></div>
+      <span class="nav-subtitle">Formal Verification Artifact</span>
+    </div>
+    <div class="nav-right">
+      <a href="#workbench" class="nav-link">Workbench</a>
+      <a href="#theory" class="nav-link">Theory</a>
+      <a href="#results" class="nav-link">Results</a>
+      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" rel="noopener" class="nav-gh">GitHub ↗</a>
     </div>
   </div>
 </nav>
 
-<!-- ═════ HERO ═════ -->
-<section class="hero" id="top">
-  <div class="hero-text">
-    <div class="hero-badge">
-      <span class="dot"></span>
-      Machine-Checked · Zero Axioms · Lean 4
-    </div>
-    <h1>Formally Verified Symplectic Integrator for the Three-Body Problem</h1>
-    <p class="hero-sub">
-      The first machine-checked proof that decomposing the gravitational three-body system into
-      three interconnected Kepler problems via the Hernandez–Bertschinger (2015) pairwise map
-      is <em>globally symplectic</em>, <em>time-reversible</em>, and exactly conserves all
-      nine Poincaré momentum integrals — paired with a zero-dependency IEEE-754 C99 reference engine.
-    </p>
-    <div class="hero-meta">
-      <div><strong>Author</strong> — Mohammad Hossam Mohammed Ali Zahran</div>
-      <div><strong>Affiliation</strong> — Menoufia National University, Egypt</div>
-      <div><strong>Stack</strong> — Lean 4 v4.14.0 + Mathlib · ISO C99 · KaTeX</div>
-    </div>
-  </div>
-  <div class="hero-visual">
-    <div class="hero-canvas-wrap">
-      <canvas id="heroCanvas" width="520" height="520"></canvas>
-      <div class="canvas-overlay">
-        <div class="canvas-info">
-          <div>Orbit: <span id="hero-orbit">Figure-8</span></div>
+<!-- ════ HERO ════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-text reveal">
+        <div class="hero-eyebrow">
+          <span class="pip"></span>
+          Machine-Checked · Zero Axioms · Lean 4 + Mathlib
+        </div>
+        <h1>Formally verified symplectic integrator for the three-body problem</h1>
+        <p class="hero-body">
+          The first machine-checked proof that decomposing the gravitational three-body system
+          into three interconnected Kepler problems via the
+          Hernandez–Bertschinger (2015) pairwise map is <em>globally symplectic</em>,
+          <em>time-reversible</em>, and exactly conserves all nine Poincaré
+          momentum integrals — paired with a zero-dependency IEEE-754 C99
+          reference engine.
+        </p>
+        <div class="hero-author">
+          <div><strong>Author</strong> &mdash; Mohammad Hossam Mohammed Ali Zahran</div>
+          <div><strong>Affiliation</strong> &mdash; Menoufia National University, Egypt</div>
+          <div><strong>Stack</strong> &mdash; Lean 4 v4.14.0 · Mathlib · ISO C99</div>
+        </div>
+        <div class="hero-actions">
+          <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" class="btn-primary">View Repository →</a>
+          <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean" target="_blank" class="btn-secondary">Read the Proofs</a>
+        </div>
+      </div>
+      <div class="hero-vis reveal" style="transition-delay:0.12s;">
+        <canvas id="heroCanvas" width="840" height="840"></canvas>
+        <div class="hero-vis-overlay">
+          <div>Orbit <span id="hero-orbit">Figure-8</span></div>
           <div>$t$ = <span id="hero-time">0.000</span></div>
         </div>
       </div>
@@ -430,322 +477,316 @@
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- ═════ INTERACTIVE WORKBENCH ═════ -->
+<!-- ════ WORKBENCH ════ -->
 <section class="section" id="workbench">
-  <div class="section-header">
-    <div class="section-label">Interactive Simulation</div>
-    <div class="section-title">Live Symplectic Workbench</div>
-    <p class="section-desc">
-      Real-time pairwise Kepler integration executing 2nd-order Strang (5 stages) and
-      4th-order Yoshida (15 stages) compositions with live conservation monitoring.
-    </p>
-  </div>
-
-  <div class="workbench">
-    <div class="wb-toolbar">
-      <div class="wb-toolbar-left">
-        <select id="sel-preset" class="wb-select">
-          <option value="fig8">Figure-8 (Chenciner–Montgomery)</option>
-          <option value="lagrange">Lagrange Equilateral Triangle</option>
-          <option value="euler">Euler Collinear</option>
-        </select>
-        <select id="sel-order" class="wb-select">
-          <option value="4">4th-Order Yoshida</option>
-          <option value="2">2nd-Order Strang</option>
-        </select>
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button id="btn-reverse" class="wb-btn warn">⇌ Reverse Time</button>
-        <button id="btn-play" class="wb-btn primary">Pause</button>
-        <button id="btn-reset" class="wb-btn">Reset</button>
-      </div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Interactive Simulation</div>
+      <div class="section-title">Live symplectic workbench</div>
+      <p class="section-desc">
+        Real-time pairwise Kepler integration with 2nd-order Strang (5 stages)
+        and 4th-order Yoshida (15 stages) compositions. Conservation invariants
+        are monitored at every frame.
+      </p>
     </div>
 
-    <div class="wb-body">
-      <div class="wb-canvas-area">
-        <canvas id="simCanvas" width="700" height="500"></canvas>
-        <div style="position:absolute;top:12px;left:12px;" class="canvas-info">
-          <div>Time: <span id="lbl-time">0.000</span></div>
-          <div>Steps: <span id="lbl-steps">0</span></div>
-          <div>Direction: <span id="lbl-dir" style="color:var(--green);font-weight:700;">FORWARD</span></div>
+    <div class="wb reveal" style="transition-delay:0.08s;">
+      <div class="wb-bar">
+        <div class="wb-bar-left">
+          <select id="sel-preset" class="wb-sel">
+            <option value="fig8">Figure-8 (Chenciner–Montgomery)</option>
+            <option value="lagrange">Lagrange Equilateral Triangle</option>
+            <option value="euler">Euler Collinear</option>
+          </select>
+          <select id="sel-order" class="wb-sel">
+            <option value="4">4th-Order Yoshida</option>
+            <option value="2">2nd-Order Strang</option>
+          </select>
+        </div>
+        <div class="wb-bar-right">
+          <button id="btn-reverse" class="wb-b caution">⇌ Reverse Time</button>
+          <button id="btn-play" class="wb-b on">Pause</button>
+          <button id="btn-reset" class="wb-b">Reset</button>
         </div>
       </div>
 
-      <div class="wb-telemetry">
-        <div class="tel-header">
-          <span>9 Poincaré Invariants</span>
-          <span style="font-size:10px;font-family:var(--font-mono);color:var(--text-muted);">IEEE-754</span>
-        </div>
-
-        <div class="tel-row">
-          <div>
-            <div class="tel-label">Linear Momentum $\|\Delta\mathbf{P}\|$</div>
-            <div class="tel-sublabel">3 invariants · $\mathbf{p}_1 + \mathbf{p}_2 + \mathbf{p}_3 = \mathbf{P}_0$</div>
+      <div class="wb-split">
+        <div class="wb-canvas-col">
+          <canvas id="simCanvas" width="1200" height="880"></canvas>
+          <div class="wb-hud">
+            <div>Time <span id="lbl-time">0.000</span></div>
+            <div>Steps <span id="lbl-steps">0</span></div>
+            <div>Direction <span id="lbl-dir" class="fwd">FORWARD</span></div>
           </div>
-          <div class="tel-value tel-green" id="tel-p">0.000e+0</div>
         </div>
 
-        <div class="tel-row">
-          <div>
-            <div class="tel-label">Angular Momentum $\|\Delta\mathbf{L}\|$</div>
-            <div class="tel-sublabel">3 invariants · $\sum \mathbf{q}_i \times \mathbf{p}_i = \mathbf{L}_0$</div>
+        <div class="wb-panel">
+          <div class="wp-head">
+            <span>9 Poincaré Invariants</span>
+            <span style="font-family:var(--mono);letter-spacing:0;">IEEE-754</span>
           </div>
-          <div class="tel-value tel-green" id="tel-l">0.000e+0</div>
-        </div>
 
-        <div class="tel-row">
-          <div>
-            <div class="tel-label">Barycentric Boost $\|\Delta\mathbf{K}\|$</div>
-            <div class="tel-sublabel">3 invariants · $\sum m_i \mathbf{q}_i - t\mathbf{P} = \mathbf{K}_0$</div>
+          <div class="wp-row">
+            <div>
+              <div class="wp-name">Linear Momentum $\|\Delta\mathbf{P}\|$</div>
+              <div class="wp-sub">$\mathbf{p}_1 + \mathbf{p}_2 + \mathbf{p}_3 = \mathbf{P}_0$</div>
+            </div>
+            <div class="wp-val v-teal" id="tel-p">0.000e+0</div>
           </div>
-          <div class="tel-value tel-green" id="tel-k">0.000e+0</div>
-        </div>
 
-        <div class="tel-row">
-          <div>
-            <div class="tel-label">Relative Energy $|\Delta E / E_0|$</div>
-            <div class="tel-sublabel">Bounded symplectic Hamiltonian oscillation</div>
+          <div class="wp-row">
+            <div>
+              <div class="wp-name">Angular Momentum $\|\Delta\mathbf{L}\|$</div>
+              <div class="wp-sub">$\sum \mathbf{q}_i \times \mathbf{p}_i = \mathbf{L}_0$</div>
+            </div>
+            <div class="wp-val v-teal" id="tel-l">0.000e+0</div>
           </div>
-          <div class="tel-value tel-cyan" id="tel-e">0.000e+0</div>
-        </div>
 
-        <div class="tel-row" style="border-bottom:none;">
-          <div>
-            <div class="tel-label">Time-Reversibility $\|\Delta\mathbf{q}_{\mathrm{rev}}\|$</div>
-            <div class="tel-sublabel">$\Psi_{-h}^N \circ \Psi_h^N(\mathbf{z}) - \mathbf{z}$</div>
+          <div class="wp-row">
+            <div>
+              <div class="wp-name">Barycentric Boost $\|\Delta\mathbf{K}\|$</div>
+              <div class="wp-sub">$\sum m_i \mathbf{q}_i - t\mathbf{P} = \mathbf{K}_0$</div>
+            </div>
+            <div class="wp-val v-teal" id="tel-k">0.000e+0</div>
           </div>
-          <div class="tel-value tel-amber" id="tel-rev">—</div>
-        </div>
 
-        <div class="wb-slider-row">
-          <label>Speed</label>
-          <input id="slider-speed" type="range" min="1" max="80" value="20">
-          <span class="val" id="lbl-speed-val">20</span>
-        </div>
+          <div class="wp-row">
+            <div>
+              <div class="wp-name">Relative Energy $|\Delta E / E_0|$</div>
+              <div class="wp-sub">Bounded symplectic oscillation</div>
+            </div>
+            <div class="wp-val v-blue" id="tel-e">0.000e+0</div>
+          </div>
 
-        <div class="wb-hint">
-          <strong>Tip:</strong> Click <strong>Reverse Time</strong> while running. The integrator
-          flips $h \mapsto -h$, retracing the trajectory back to the initial state at machine precision $\sim 10^{-14}$.
+          <div class="wp-row">
+            <div>
+              <div class="wp-name">Time-Reversibility $\|\Delta\mathbf{q}_{\mathrm{rev}}\|$</div>
+              <div class="wp-sub">$\Psi_{-h}^N \circ \Psi_h^N(\mathbf{z}) - \mathbf{z}$</div>
+            </div>
+            <div class="wp-val v-amber" id="tel-rev">—</div>
+          </div>
+
+          <div class="wp-slider">
+            <label>Speed</label>
+            <input id="slider-speed" type="range" min="1" max="80" value="20">
+            <span class="sv" id="lbl-speed-val">20</span>
+          </div>
+
+          <div class="wp-note">
+            Click <strong style="color:var(--amber);">Reverse Time</strong> while running.
+            The integrator flips $h \mapsto -h$, retracing the trajectory to the initial
+            conditions at machine precision $\sim\!10^{-14}$.
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- ═════ MACHINE-CHECKED THEOREMS ═════ -->
+<!-- ════ THEOREMS ════ -->
 <section class="section" id="theory">
-  <div class="section-header">
-    <div class="section-label">Formal Verification</div>
-    <div class="section-title">Machine-Checked Proofs in Lean 4</div>
-    <p class="section-desc">
-      Every theorem below is formally verified in
-      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean"
-         target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600;">SymplecticThreeBody.lean</a>
-      with zero <code style="font-family:var(--font-mono);background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px;">sorry</code> axioms.
-    </p>
-  </div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Formal Verification</div>
+      <div class="section-title">Machine-checked proofs in Lean 4</div>
+      <p class="section-desc">
+        Every theorem is formally verified in
+        <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean" target="_blank">SymplecticThreeBody.lean</a>
+        with zero <code>sorry</code> axioms against Mathlib v4.14.0.
+      </p>
+    </div>
 
-  <div class="thm-table-wrap">
-    <table class="thm-table">
-      <thead>
-        <tr>
-          <th style="width:35%;">Theorem</th>
-          <th>Mathematical Property</th>
-          <th style="width:150px;">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="thm-id">triangle_closure</span></td>
-          <td class="thm-desc">Topological loop closure: $\mathbf{r}_{12} + \mathbf{r}_{23} + \mathbf{r}_{31} = \mathbf{0}$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">interconnected_two_body_decomposition</span></td>
-          <td class="thm-desc">Exact Master Two-Body acceleration splitting with tidal stiffness mismatch bracket</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">lagrange_equilateral_decoupling</span></td>
-          <td class="thm-desc">$\kappa_{12} = \kappa_{23} = \kappa_{31} \Rightarrow$ three decoupled exact Kepler problems of mass $M$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">euler_collinear_decoupling</span></td>
-          <td class="thm-desc">Euler collinear reduction with exact renormalized stiffness $\kappa_{\mathrm{eff}}$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">toPairCoords_symplectic</span></td>
-          <td class="thm-desc">Canonical coordinate embedding preserves 2-form: $\omega_6^{\mathrm{CM}} + \omega_6^{\mathrm{rel}} = \omega_{12}$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">isSymplectic6_keplerMap</span></td>
-          <td class="thm-desc">Universal $f$-$g$ propagator with Wronskian $f\dot{g} - g\dot{f} = 1$ preserves $\omega_6$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">isSymplectic18_strang</span></td>
-          <td class="thm-desc">5-stage symmetric Strang composition $\Psi_h$ is globally symplectic on $\mathbb{R}^{18}$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">totalMomentum_liftPair{12,23,31}</span></td>
-          <td class="thm-desc">Exact total linear momentum conservation across every pairwise Kepler step (3 invariants)</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">totalAngularMomentum_liftPair12_kepler</span></td>
-          <td class="thm-desc">Exact angular momentum conservation via central-force Wronskian identity (3 invariants)</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">barycentricMoment_step12</span></td>
-          <td class="thm-desc">Barycenter advances by exactly $h \cdot \mathbf{P}_{\mathrm{tot}}$ across pairwise substeps (3 invariants)</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-        <tr>
-          <td><span class="thm-id">strang_time_reversible</span></td>
-          <td class="thm-desc">Strict time-reversibility: $\Psi_{-h}(\Psi_h(\mathbf{z})) = \mathbf{z}$</td>
-          <td><span class="thm-badge">Verified</span></td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="thm-wrap reveal" style="transition-delay:0.06s;">
+      <table class="thm-t">
+        <thead>
+          <tr>
+            <th style="width:34%;">Theorem</th>
+            <th>Mathematical Property</th>
+            <th style="width:120px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="t-id">triangle_closure</span></td>
+            <td class="t-desc">Topological loop closure: $\mathbf{r}_{12} + \mathbf{r}_{23} + \mathbf{r}_{31} = \mathbf{0}$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">interconnected_two_body_decomposition</span></td>
+            <td class="t-desc">Exact Master Two-Body acceleration splitting with tidal stiffness mismatch bracket</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">lagrange_equilateral_decoupling</span></td>
+            <td class="t-desc">$\kappa_{12} = \kappa_{23} = \kappa_{31}$ $\Rightarrow$ three decoupled exact Kepler problems of total mass $M$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">euler_collinear_decoupling</span></td>
+            <td class="t-desc">Euler collinear reduction with exact renormalized effective stiffness $\kappa_{\mathrm{eff}}$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">toPairCoords_symplectic</span></td>
+            <td class="t-desc">Canonical coordinate embedding preserves 2-form: $\omega_6^{\mathrm{CM}} + \omega_6^{\mathrm{rel}} = \omega_{12}$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">isSymplectic6_keplerMap</span></td>
+            <td class="t-desc">Universal $f\text{-}g$ propagator with Wronskian $f\dot{g} - g\dot{f} = 1$ preserves $\omega_6$ identically</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">isSymplectic18_strang</span></td>
+            <td class="t-desc">5-stage symmetric Strang composition $\Psi_h$ is globally symplectic on $\mathbb{R}^{18}$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">totalMomentum_liftPair{12,23,31}</span></td>
+            <td class="t-desc">Exact total linear momentum conservation across every pairwise Kepler step (3 invariants)</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">totalAngularMomentum_liftPair12_kepler</span></td>
+            <td class="t-desc">Exact angular momentum conservation via central-force Wronskian identity (3 invariants)</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">barycentricMoment_step12</span></td>
+            <td class="t-desc">Barycenter advances by exactly $h \cdot \mathbf{P}_{\mathrm{tot}}$ across pairwise substeps (3 invariants)</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+          <tr>
+            <td><span class="t-id">strang_time_reversible</span></td>
+            <td class="t-desc">Strict time-reversibility: $\Psi_{-h}\!\bigl(\Psi_h(\mathbf{z})\bigr) = \mathbf{z}$</td>
+            <td><span class="t-badge"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>Verified</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- ═════ NUMERICAL RESULTS ═════ -->
+<!-- ════ RESULTS ════ -->
 <section class="section" id="results">
-  <div class="section-header">
-    <div class="section-label">Empirical Verification</div>
-    <div class="section-title">C99 Numerical Benchmark Results</div>
-    <p class="section-desc">
-      Compiled under <code style="font-family:var(--font-mono);background:var(--bg-card);padding:2px 6px;border-radius:4px;font-size:12px;">-std=c99 -O3 -Wall -Wextra -Werror -pedantic -fno-fast-math</code>,
-      27/27 strict assertions passed ($\le 10^{-13}$) on the Figure-8 choreographic orbit.
-    </p>
-  </div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Empirical Verification</div>
+      <div class="section-title">C99 numerical benchmark results</div>
+      <p class="section-desc">
+        Compiled with <code>-std=c99 -O3 -Wall -Wextra -Werror -pedantic -fno-fast-math</code>.
+        27/27 strict assertions passed ($\le 10^{-13}$) on the Figure-8 choreographic orbit.
+      </p>
+    </div>
 
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-label">Relative Energy Oscillation</div>
-      <div class="metric-value mv-cyan">9.93 × 10<sup>−13</sup></div>
-      <div class="metric-unit">Bounded symplectic · $|\Delta H / H_0|$</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Linear Momentum Drift</div>
-      <div class="metric-value mv-green">1.96 × 10<sup>−14</sup></div>
-      <div class="metric-unit">IEEE-754 double-precision floor</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Angular Momentum Drift</div>
-      <div class="metric-value mv-green">4.99 × 10<sup>−14</sup></div>
-      <div class="metric-unit">Exact conservation verified</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Barycentric Boost Drift</div>
-      <div class="metric-value mv-green">1.00 × 10<sup>−12</sup></div>
-      <div class="metric-unit">Compensated $\beta = 1 - \alpha$ identity</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Time-Reversibility Error</div>
-      <div class="metric-value mv-amber">8.94 × 10<sup>−13</sup></div>
-      <div class="metric-unit">$\|\Psi_{-h}^N \circ \Psi_h^N(\mathbf{z}_0) - \mathbf{z}_0\|$</div>
+    <div class="m-card-wrap reveal" style="transition-delay:0.06s;">
+      <div class="m-grid">
+        <div class="m-card">
+          <div class="m-label">Energy Oscillation</div>
+          <div class="m-val v-blue">9.93 × 10<sup>−13</sup></div>
+          <div class="m-note">Bounded symplectic<br>$|\Delta H / H_0|$</div>
+        </div>
+        <div class="m-card" style="border-left:1px solid var(--border);">
+          <div class="m-label">Linear Momentum</div>
+          <div class="m-val v-teal">1.96 × 10<sup>−14</sup></div>
+          <div class="m-note">IEEE-754 DP floor<br>3 conserved components</div>
+        </div>
+        <div class="m-card" style="border-left:1px solid var(--border);">
+          <div class="m-label">Angular Momentum</div>
+          <div class="m-val v-teal">4.99 × 10<sup>−14</sup></div>
+          <div class="m-note">Exact conservation<br>3 conserved components</div>
+        </div>
+        <div class="m-card" style="border-left:1px solid var(--border);">
+          <div class="m-label">Barycentric Boost</div>
+          <div class="m-val v-teal">1.00 × 10<sup>−12</sup></div>
+          <div class="m-note">$\beta = 1 - \alpha$ identity<br>3 conserved components</div>
+        </div>
+        <div class="m-card" style="border-left:1px solid var(--border);">
+          <div class="m-label">Time-Reversibility</div>
+          <div class="m-val v-amber">8.94 × 10<sup>−13</sup></div>
+          <div class="m-note">$\|\Psi_{-h}^N \circ \Psi_h^N(\mathbf{z}_0) - \mathbf{z}_0\|$</div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- ═════ ARCHITECTURE ═════ -->
+<!-- ════ ARCHITECTURE ════ -->
 <section class="section" id="architecture">
-  <div class="section-header">
-    <div class="section-label">Technical Architecture</div>
-    <div class="section-title">Repository Structure</div>
-  </div>
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">Repository</div>
+      <div class="section-title">Technical architecture</div>
+    </div>
 
-  <div class="arch-grid">
-    <div class="arch-card">
-      <div class="arch-icon" style="background:var(--accent-glow);color:var(--accent);">λ</div>
-      <h3>Lean 4 Formalization</h3>
-      <p>
-        Complete axiom-free verification of 18D symplecticity, canonical embeddings,
-        9-invariant conservation, and time-reversibility. Builds against Mathlib v4.14.0.
-      </p>
-      <div style="margin-top:12px;">
-        <code>SymplecticThreeBody.lean</code>
+    <div class="arch-row reveal" style="transition-delay:0.06s;">
+      <div class="a-card">
+        <div class="a-icon" style="background:var(--blue-bg);color:var(--blue);">λ</div>
+        <h3>Lean 4 Formalization</h3>
+        <p>
+          Complete axiom-free verification of 18D symplecticity, canonical embeddings,
+          nine-invariant conservation, and time-reversibility. Builds against Mathlib v4.14.0.
+        </p>
+        <div class="a-files"><code>SymplecticThreeBody.lean</code></div>
       </div>
-    </div>
-    <div class="arch-card">
-      <div class="arch-icon" style="background:rgba(34,211,238,0.1);color:var(--cyan);">C</div>
-      <h3>C99 Reference Engine</h3>
-      <p>
-        Zero-dependency IEEE-754 double-precision solver with Stumpff universal variables,
-        2nd-order Strang and 4th-order Yoshida compositions. Strict CI assertion suite (27 tests).
-      </p>
-      <div style="margin-top:12px;">
-        <code>src/</code> · <code>tests/</code>
+      <div class="a-card">
+        <div class="a-icon" style="background:var(--teal-bg);color:var(--teal);">C</div>
+        <h3>C99 Reference Engine</h3>
+        <p>
+          Zero-dependency IEEE-754 double-precision solver with Stumpff universal variables,
+          Strang and Yoshida compositions. Strict CI assertion suite — 27 tests.
+        </p>
+        <div class="a-files"><code>src/</code> <code>tests/</code></div>
       </div>
-    </div>
-    <div class="arch-card">
-      <div class="arch-icon" style="background:rgba(139,92,246,0.1);color:var(--violet);">📄</div>
-      <h3>Publication Manuscript</h3>
-      <p>
-        Standalone LaTeX submission manuscript and JOSS-formatted paper with complete
-        bibliography. Built via <code>make paper</code>.
-      </p>
-      <div style="margin-top:12px;">
-        <code>paper/main.tex</code> · <code>paper/paper.md</code>
+      <div class="a-card">
+        <div class="a-icon" style="background:var(--amber-bg);color:var(--amber);">✎</div>
+        <h3>Publication Manuscript</h3>
+        <p>
+          Standalone LaTeX submission manuscript and JOSS-formatted paper with
+          complete bibliography. Built via <code>make paper</code>.
+        </p>
+        <div class="a-files"><code>paper/main.tex</code> <code>paper/paper.md</code></div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═════ CTA ═════ -->
+<!-- ════ CTA ════ -->
 <section class="cta-section">
-  <h2>Reproduce. Verify. Extend.</h2>
-  <p>
-    Clone the repository, run <code style="font-family:var(--font-mono);background:var(--bg-card);padding:2px 6px;border-radius:4px;">make check</code>
-    to compile the C99 suite and verify all Lean 4 proofs in one command.
-  </p>
-  <div class="cta-buttons">
-    <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" class="cta-btn filled">
-      View Repository →
-    </a>
-    <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean" target="_blank" class="cta-btn outline">
-      Read the Proofs
-    </a>
-    <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/CITATION.cff" target="_blank" class="cta-btn outline">
-      Cite This Work
-    </a>
+  <div class="container">
+    <h2 class="reveal">Reproduce. Verify. Extend.</h2>
+    <p class="reveal" style="transition-delay:0.06s;">
+      Clone the repository and run <code>make check</code> to compile the C99 suite
+      and verify all Lean 4 proofs in one command.
+    </p>
+    <div class="cta-btns reveal" style="transition-delay:0.12s;">
+      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" class="btn-primary">View Repository →</a>
+      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean" target="_blank" class="btn-secondary">Read the Proofs</a>
+      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/CITATION.cff" target="_blank" class="btn-secondary">Cite This Work</a>
+    </div>
   </div>
 </section>
 
-<!-- ═════ FOOTER ═════ -->
+<!-- ════ FOOTER ════ -->
 <footer class="footer">
-  <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-    <div>
-      © 2026 <a href="https://github.com/mohamedhossammohamed" target="_blank">Mohammad Hossam Mohammed Ali Zahran</a> · Menoufia National University
-    </div>
-    <div>
-      <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/LICENSE" target="_blank">MIT License</a>
-       · Lean 4 v4.14.0
-    </div>
+  <div class="footer-inner">
+    <div>© 2026 <a href="https://github.com/mohamedhossammohamed" target="_blank">Mohammad Hossam Mohammed Ali Zahran</a> · Menoufia National University</div>
+    <div><a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/LICENSE" target="_blank">MIT License</a> · Lean 4 v4.14.0</div>
   </div>
 </footer>
 
 
-<!-- ═════════════════════════════════════════════════════════════════════
-     SIMULATION ENGINE
-     ═════════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════════
+     ENGINE
+     ═══════════════════════════════════════════════════════════════ -->
 <script>
-// ─── Vector3 ───
+// ── Intersection Observer for reveal animations ──
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── Vector3 ──
 function v3(x,y,z){return{x:x||0,y:y||0,z:z||0};}
 function v3a(a,b){return v3(a.x+b.x,a.y+b.y,a.z+b.z);}
 function v3s(a,b){return v3(a.x-b.x,a.y-b.y,a.z-b.z);}
@@ -754,164 +795,95 @@ function v3d(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
 function v3n(a){return Math.sqrt(v3d(a,a));}
 function v3x(a,b){return v3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);}
 
-// ─── Stumpff C(z), S(z) ───
+// ── Stumpff ──
 function stumpff(z){
-  if(Math.abs(z)<1e-4){
-    const z2=z*z,z3=z2*z,z4=z2*z2;
-    return{C:0.5-z/24+z2/720-z3/40320+z4/3628800,S:1/6-z/120+z2/5040-z3/362880+z4/39916800};
-  }
+  if(Math.abs(z)<1e-4){const z2=z*z,z3=z2*z,z4=z2*z2;return{C:.5-z/24+z2/720-z3/40320+z4/3628800,S:1/6-z/120+z2/5040-z3/362880+z4/39916800};}
   if(z>0){const s=Math.sqrt(z);return{C:(1-Math.cos(s))/z,S:(s-Math.sin(s))/(s*z)};}
   const s=Math.sqrt(-z);return{C:(Math.cosh(s)-1)/(-z),S:(Math.sinh(s)-s)/(s*(-z))};
 }
 
-// ─── Pairwise Kepler Step ───
+// ── Pairwise Kepler ──
 function stepPair(sys,i,j,tau){
-  const mi=sys.m[i],mj=sys.m[j],mij=mi+mj;
-  const alpha=mi/mij,beta=1-alpha;
-  const mu_ij=(mi*mj)/mij;
+  const mi=sys.m[i],mj=sys.m[j],mij=mi+mj,alpha=mi/mij,beta=1-alpha,mu_ij=mi*mj/mij;
   let Rcm=v3a(v3m(alpha,sys.q[i]),v3m(beta,sys.q[j]));
   const Pcm=v3a(sys.p[i],sys.p[j]);
-  let r0=v3s(sys.q[i],sys.q[j]);
-  let prel=v3s(v3m(beta,sys.p[i]),v3m(alpha,sys.p[j]));
+  let r0=v3s(sys.q[i],sys.q[j]),prel=v3s(v3m(beta,sys.p[i]),v3m(alpha,sys.p[j]));
   Rcm=v3a(Rcm,v3m(tau/(2*mij),Pcm));
   let v0=v3m(1/(2*mu_ij),prel);
-  const mu_g=0.5*sys.G*mij;
-  const r0m=v3n(r0),v0sq=v3d(v0,v0),rv0=v3d(r0,v0);
-  const inv_a=2/r0m-v0sq/mu_g;
-  const smu=Math.sqrt(mu_g);
-  let chi=smu*Math.abs(inv_a)*tau;
-  if(chi===0)chi=smu*tau/r0m;
-  for(let it=0;it<35;it++){
-    const c2=chi*chi,z=inv_a*c2,cs=stumpff(z);
+  const mu_g=.5*sys.G*mij,r0m=v3n(r0),v0sq=v3d(v0,v0),rv0=v3d(r0,v0);
+  const inv_a=2/r0m-v0sq/mu_g,smu=Math.sqrt(mu_g);
+  let chi=smu*Math.abs(inv_a)*tau;if(chi===0)chi=smu*tau/r0m;
+  for(let it=0;it<35;it++){const c2=chi*chi,z=inv_a*c2,cs=stumpff(z);
     const F=r0m*chi+(rv0/smu)*c2*cs.C+(1-inv_a*r0m)*c2*chi*cs.S-smu*tau;
     const dF=r0m+(rv0/smu)*chi*(1-z*cs.S)+(1-inv_a*r0m)*c2*cs.C;
-    const dc=F/dF;chi-=dc;
-    if(Math.abs(dc)<=1e-15*(1+Math.abs(chi)))break;
-  }
+    const dc=F/dF;chi-=dc;if(Math.abs(dc)<=1e-15*(1+Math.abs(chi)))break;}
   const c2=chi*chi,z=inv_a*c2,cs=stumpff(z);
-  const f=1-c2/r0m*cs.C;
-  const g=tau-c2*chi/smu*cs.S;
-  const r1=v3a(v3m(f,r0),v3m(g,v0));
-  const r1m=v3n(r1);
-  const fdot=(smu/(r0m*r1m))*(z*cs.S-1)*chi;
-  const gdot=(1+g*fdot)/f;
-  const v1=v3a(v3m(fdot,r0),v3m(gdot,v0));
-  const prel1=v3m(2*mu_ij,v1);
-  sys.q[i]=v3a(Rcm,v3m(beta,r1));
-  sys.p[i]=v3a(v3m(alpha,Pcm),prel1);
-  sys.q[j]=v3s(Rcm,v3m(alpha,r1));
-  sys.p[j]=v3s(Pcm,sys.p[i]);
+  const f=1-c2/r0m*cs.C,g=tau-c2*chi/smu*cs.S;
+  const r1=v3a(v3m(f,r0),v3m(g,v0)),r1m=v3n(r1);
+  const fdot=(smu/(r0m*r1m))*(z*cs.S-1)*chi,gdot=(1+g*fdot)/f;
+  const v1=v3a(v3m(fdot,r0),v3m(gdot,v0)),prel1=v3m(2*mu_ij,v1);
+  sys.q[i]=v3a(Rcm,v3m(beta,r1));sys.p[i]=v3a(v3m(alpha,Pcm),prel1);
+  sys.q[j]=v3s(Rcm,v3m(alpha,r1));sys.p[j]=v3s(Pcm,sys.p[i]);
 }
 
-function stepStrang(sys,h){
-  const h2=0.5*h;
-  stepPair(sys,0,1,h2);stepPair(sys,1,2,h2);
-  stepPair(sys,2,0,h);
-  stepPair(sys,1,2,h2);stepPair(sys,0,1,h2);
-}
-function stepYoshida(sys,h){
-  const c=1.25992104989487316477;
-  const w1=1/(2-c),w0=-c/(2-c);
-  stepStrang(sys,w1*h);stepStrang(sys,w0*h);stepStrang(sys,w1*h);
-}
+function stepStrang(sys,h){const h2=.5*h;stepPair(sys,0,1,h2);stepPair(sys,1,2,h2);stepPair(sys,2,0,h);stepPair(sys,1,2,h2);stepPair(sys,0,1,h2);}
+function stepYoshida(sys,h){const c=1.25992104989487316477,w1=1/(2-c),w0=-c/(2-c);stepStrang(sys,w1*h);stepStrang(sys,w0*h);stepStrang(sys,w1*h);}
 
-function totalE(sys){
-  let T=0,V=0;
-  for(let i=0;i<3;i++)T+=v3d(sys.p[i],sys.p[i])/(2*sys.m[i]);
-  for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)V-=sys.G*sys.m[i]*sys.m[j]/v3n(v3s(sys.q[i],sys.q[j]));
-  return T+V;
-}
+function totalE(sys){let T=0,V=0;for(let i=0;i<3;i++)T+=v3d(sys.p[i],sys.p[i])/(2*sys.m[i]);
+  for(let i=0;i<3;i++)for(let j=i+1;j<3;j++)V-=sys.G*sys.m[i]*sys.m[j]/v3n(v3s(sys.q[i],sys.q[j]));return T+V;}
 function totalP(sys){return v3a(v3a(sys.p[0],sys.p[1]),sys.p[2]);}
 function totalL(sys){return v3a(v3a(v3x(sys.q[0],sys.p[0]),v3x(sys.q[1],sys.p[1])),v3x(sys.q[2],sys.p[2]));}
-function totalK(sys,t){
-  const MR=v3a(v3a(v3m(sys.m[0],sys.q[0]),v3m(sys.m[1],sys.q[1])),v3m(sys.m[2],sys.q[2]));
-  return v3s(MR,v3m(t,totalP(sys)));
-}
+function totalK(sys,t){return v3s(v3a(v3a(v3m(sys.m[0],sys.q[0]),v3m(sys.m[1],sys.q[1])),v3m(sys.m[2],sys.q[2])),v3m(t,totalP(sys)));}
 
-// ─── Presets ───
+// ── Presets ──
 const presets={
-  fig8:{name:"Figure-8",
-    q:[v3(-0.97000436,0.24308753,0),v3(0,0,0),v3(0.97000436,-0.24308753,0)],
-    p:[v3(0.466203685,0.43236573,0),v3(-0.93240737,-0.86473146,0),v3(0.466203685,0.43236573,0)],
-    m:[1,1,1],G:1,scale:140},
-  lagrange:{name:"Lagrange Equilateral",
-    q:[v3(1,0,0),v3(-0.5,Math.sqrt(3)/2,0),v3(-0.5,-Math.sqrt(3)/2,0)],
-    p:[v3(0,1,0),v3(-Math.sqrt(3)/2,-0.5,0),v3(Math.sqrt(3)/2,-0.5,0)],
-    m:[1,1,1],G:1,scale:120},
-  euler:{name:"Euler Collinear",
-    q:[v3(-1,0,0),v3(0,0,0),v3(1,0,0)],
-    p:[v3(0,-0.6,0),v3(0,0,0),v3(0,0.6,0)],
-    m:[1,1,1],G:1,scale:140}
+  fig8:{name:"Figure-8",q:[v3(-.97000436,.24308753,0),v3(0,0,0),v3(.97000436,-.24308753,0)],p:[v3(.466203685,.43236573,0),v3(-.93240737,-.86473146,0),v3(.466203685,.43236573,0)],m:[1,1,1],G:1,scale:140},
+  lagrange:{name:"Lagrange",q:[v3(1,0,0),v3(-.5,Math.sqrt(3)/2,0),v3(-.5,-Math.sqrt(3)/2,0)],p:[v3(0,1,0),v3(-Math.sqrt(3)/2,-.5,0),v3(Math.sqrt(3)/2,-.5,0)],m:[1,1,1],G:1,scale:120},
+  euler:{name:"Euler",q:[v3(-1,0,0),v3(0,0,0),v3(1,0,0)],p:[v3(0,-.6,0),v3(0,0,0),v3(0,.6,0)],m:[1,1,1],G:1,scale:140}
 };
-
 function cloneSys(s){return{q:s.q.map(v=>v3(v.x,v.y,v.z)),p:s.p.map(v=>v3(v.x,v.y,v.z)),m:[...s.m],G:s.G,scale:s.scale};}
 
-// ─── State ───
-let sys,initSys,E0,P0,L0,K0;
-let simTime=0,stepCount=0,isPlaying=true,dt=1e-3,timeSign=1;
-let trails=[[],[],[]];const MAX_TRAIL=500;
-const bodyColors=["#3b82f6","#f43f5e","#a855f7"];
+// ── State ──
+let sys,initSys,E0,P0,L0,K0,simTime=0,stepCount=0,isPlaying=true,dt=1e-3,timeSign=1;
+let trails=[[],[],[]];const MAX_TRAIL=550;
+const bCol=["#3b82f6","#ef4444","#8b5cf6"];
 
 function initPreset(k){
   sys=cloneSys(presets[k]);initSys=cloneSys(presets[k]);
   E0=totalE(sys);P0=totalP(sys);L0=totalL(sys);K0=totalK(sys,0);
   simTime=0;stepCount=0;timeSign=1;trails=[[],[],[]];
   document.getElementById("lbl-dir").textContent="FORWARD";
-  document.getElementById("lbl-dir").style.color="var(--green)";
+  document.getElementById("lbl-dir").className="fwd";
   document.getElementById("tel-rev").textContent="—";
 }
 initPreset("fig8");
 
-// ─── Main canvas render ───
-const simCanvas=document.getElementById("simCanvas");
-const simCtx=simCanvas.getContext("2d");
-
+// ── Main canvas ──
+const simC=document.getElementById("simCanvas"),simX=simC.getContext("2d");
 function renderSim(){
-  const W=simCanvas.width,H=simCanvas.height;
-  simCtx.clearRect(0,0,W,H);
-  const cx=W/2,cy=H/2,sc=sys.scale||140;
-
-  // Trails
-  for(let i=0;i<3;i++){
-    if(trails[i].length<2)continue;
-    simCtx.beginPath();simCtx.strokeStyle=bodyColors[i];
-    simCtx.lineWidth=1.5;simCtx.globalAlpha=0.5;
-    simCtx.moveTo(cx+trails[i][0].x*sc,cy-trails[i][0].y*sc);
-    for(let k=1;k<trails[i].length;k++)simCtx.lineTo(cx+trails[i][k].x*sc,cy-trails[i][k].y*sc);
-    simCtx.stroke();simCtx.globalAlpha=1;
-  }
-
-  // Triangle
-  simCtx.beginPath();simCtx.strokeStyle="rgba(148,163,184,0.15)";
-  simCtx.lineWidth=1;simCtx.setLineDash([3,3]);
-  simCtx.moveTo(cx+sys.q[0].x*sc,cy-sys.q[0].y*sc);
-  simCtx.lineTo(cx+sys.q[1].x*sc,cy-sys.q[1].y*sc);
-  simCtx.lineTo(cx+sys.q[2].x*sc,cy-sys.q[2].y*sc);
-  simCtx.closePath();simCtx.stroke();simCtx.setLineDash([]);
-
-  // Bodies
-  for(let i=0;i<3;i++){
-    const bx=cx+sys.q[i].x*sc,by=cy-sys.q[i].y*sc;
-    const g=simCtx.createRadialGradient(bx,by,2,bx,by,18);
-    g.addColorStop(0,bodyColors[i]);g.addColorStop(1,"transparent");
-    simCtx.fillStyle=g;simCtx.beginPath();simCtx.arc(bx,by,18,0,Math.PI*2);simCtx.fill();
-    simCtx.fillStyle=bodyColors[i];simCtx.beginPath();simCtx.arc(bx,by,5,0,Math.PI*2);simCtx.fill();
-  }
+  const W=simC.width,H=simC.height;simX.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2,sc=(sys.scale||140)*(W/700);
+  for(let i=0;i<3;i++){if(trails[i].length<2)continue;
+    simX.beginPath();simX.strokeStyle=bCol[i];simX.lineWidth=2*devicePixelRatio||2;simX.globalAlpha=.4;
+    simX.moveTo(cx+trails[i][0].x*sc,cy-trails[i][0].y*sc);
+    for(let k=1;k<trails[i].length;k++)simX.lineTo(cx+trails[i][k].x*sc,cy-trails[i][k].y*sc);
+    simX.stroke();simX.globalAlpha=1;}
+  simX.beginPath();simX.strokeStyle="rgba(255,255,255,0.06)";simX.lineWidth=1;simX.setLineDash([4,4]);
+  simX.moveTo(cx+sys.q[0].x*sc,cy-sys.q[0].y*sc);simX.lineTo(cx+sys.q[1].x*sc,cy-sys.q[1].y*sc);
+  simX.lineTo(cx+sys.q[2].x*sc,cy-sys.q[2].y*sc);simX.closePath();simX.stroke();simX.setLineDash([]);
+  const r=5*(W/700);for(let i=0;i<3;i++){const bx=cx+sys.q[i].x*sc,by=cy-sys.q[i].y*sc;
+    const g=simX.createRadialGradient(bx,by,1,bx,by,r*3.5);g.addColorStop(0,bCol[i]);g.addColorStop(1,"transparent");
+    simX.fillStyle=g;simX.beginPath();simX.arc(bx,by,r*3.5,0,Math.PI*2);simX.fill();
+    simX.fillStyle=bCol[i];simX.beginPath();simX.arc(bx,by,r,0,Math.PI*2);simX.fill();}
 }
 
-// ─── Main loop ───
 function loop(){
   if(isPlaying){
     const speed=parseInt(document.getElementById("slider-speed").value,10);
     const stepFn=document.getElementById("sel-order").value==="4"?stepYoshida:stepStrang;
     const h=dt*timeSign;
-    for(let s=0;s<speed;s++){
-      stepFn(sys,h);simTime+=h;stepCount+=timeSign>0?1:-1;
-      if(s%2===0)for(let i=0;i<3;i++){
-        trails[i].push(v3(sys.q[i].x,sys.q[i].y,sys.q[i].z));
-        if(trails[i].length>MAX_TRAIL)trails[i].shift();
-      }
-    }
+    for(let s=0;s<speed;s++){stepFn(sys,h);simTime+=h;stepCount+=timeSign>0?1:-1;
+      if(s%2===0)for(let i=0;i<3;i++){trails[i].push(v3(sys.q[i].x,sys.q[i].y,sys.q[i].z));if(trails[i].length>MAX_TRAIL)trails[i].shift();}}
     const cE=totalE(sys),cP=totalP(sys),cL=totalL(sys),cK=totalK(sys,simTime);
     document.getElementById("tel-e").textContent=Math.abs((cE-E0)/E0).toExponential(3);
     document.getElementById("tel-p").textContent=v3n(v3s(cP,P0)).toExponential(3);
@@ -919,71 +891,42 @@ function loop(){
     document.getElementById("tel-k").textContent=v3n(v3s(cK,K0)).toExponential(3);
     document.getElementById("lbl-time").textContent=simTime.toFixed(3);
     document.getElementById("lbl-steps").textContent=stepCount;
-    if(timeSign<0&&Math.abs(simTime)<1e-4){
-      document.getElementById("tel-rev").textContent=v3n(v3s(sys.q[0],initSys.q[0])).toExponential(3);
-    }
+    if(timeSign<0&&Math.abs(simTime)<1e-4)document.getElementById("tel-rev").textContent=v3n(v3s(sys.q[0],initSys.q[0])).toExponential(3);
   }
-  renderSim();
-  requestAnimationFrame(loop);
+  renderSim();requestAnimationFrame(loop);
 }
 
-// ─── Controls ───
-document.getElementById("btn-play").addEventListener("click",()=>{
-  isPlaying=!isPlaying;
-  document.getElementById("btn-play").textContent=isPlaying?"Pause":"Resume";
-  document.getElementById("btn-play").classList.toggle("primary",isPlaying);
-});
+// ── Controls ──
+document.getElementById("btn-play").addEventListener("click",()=>{isPlaying=!isPlaying;const b=document.getElementById("btn-play");b.textContent=isPlaying?"Pause":"Resume";b.classList.toggle("on",isPlaying);});
 document.getElementById("btn-reset").addEventListener("click",()=>initPreset(document.getElementById("sel-preset").value));
 document.getElementById("sel-preset").addEventListener("change",e=>initPreset(e.target.value));
 document.getElementById("slider-speed").addEventListener("input",e=>document.getElementById("lbl-speed-val").textContent=e.target.value);
-document.getElementById("btn-reverse").addEventListener("click",()=>{
-  timeSign=-timeSign;
-  const fwd=timeSign>0;
-  document.getElementById("lbl-dir").textContent=fwd?"FORWARD":"REVERSED";
-  document.getElementById("lbl-dir").style.color=fwd?"var(--green)":"var(--amber)";
-});
+document.getElementById("btn-reverse").addEventListener("click",()=>{timeSign=-timeSign;const d=document.getElementById("lbl-dir");d.textContent=timeSign>0?"FORWARD":"REVERSED";d.className=timeSign>0?"fwd":"rev";});
 
 requestAnimationFrame(loop);
 
-// ─── Hero ambient canvas ───
+// ── Hero ambient ──
 (function(){
-  const hc=document.getElementById("heroCanvas");
-  const hctx=hc.getContext("2d");
-  const hs=cloneSys(presets.fig8);
-  const hTrails=[[],[],[]];
-  let hTime=0;
-  function heroLoop(){
-    for(let s=0;s<10;s++){
-      stepYoshida(hs,1e-3);hTime+=1e-3;
-      if(s%2===0)for(let i=0;i<3;i++){
-        hTrails[i].push(v3(hs.q[i].x,hs.q[i].y,hs.q[i].z));
-        if(hTrails[i].length>600)hTrails[i].shift();
-      }
-    }
-    const W=hc.width,H=hc.height;
-    hctx.clearRect(0,0,W,H);
-    const cx=W/2,cy=H/2,sc=160;
-    for(let i=0;i<3;i++){
-      if(hTrails[i].length<2)continue;
-      hctx.beginPath();hctx.strokeStyle=bodyColors[i];
-      hctx.lineWidth=1.2;hctx.globalAlpha=0.35;
-      hctx.moveTo(cx+hTrails[i][0].x*sc,cy-hTrails[i][0].y*sc);
-      for(let k=1;k<hTrails[i].length;k++)hctx.lineTo(cx+hTrails[i][k].x*sc,cy-hTrails[i][k].y*sc);
-      hctx.stroke();hctx.globalAlpha=1;
-    }
-    for(let i=0;i<3;i++){
-      const bx=cx+hs.q[i].x*sc,by=cy-hs.q[i].y*sc;
-      const g=hctx.createRadialGradient(bx,by,1,bx,by,14);
-      g.addColorStop(0,bodyColors[i]);g.addColorStop(1,"transparent");
-      hctx.fillStyle=g;hctx.beginPath();hctx.arc(bx,by,14,0,Math.PI*2);hctx.fill();
-      hctx.fillStyle=bodyColors[i];hctx.beginPath();hctx.arc(bx,by,4,0,Math.PI*2);hctx.fill();
-    }
+  const hc=document.getElementById("heroCanvas"),hx=hc.getContext("2d");
+  const hs=cloneSys(presets.fig8);const ht=[[],[],[]];let hTime=0;
+  function hLoop(){
+    for(let s=0;s<8;s++){stepYoshida(hs,1e-3);hTime+=1e-3;
+      if(s%2===0)for(let i=0;i<3;i++){ht[i].push(v3(hs.q[i].x,hs.q[i].y,hs.q[i].z));if(ht[i].length>700)ht[i].shift();}}
+    const W=hc.width,H=hc.height;hx.clearRect(0,0,W,H);
+    const cx=W/2,cy=H/2,sc=W/3.2;
+    for(let i=0;i<3;i++){if(ht[i].length<2)continue;
+      hx.beginPath();hx.strokeStyle=bCol[i];hx.lineWidth=1.5;hx.globalAlpha=.3;
+      hx.moveTo(cx+ht[i][0].x*sc,cy-ht[i][0].y*sc);
+      for(let k=1;k<ht[i].length;k++)hx.lineTo(cx+ht[i][k].x*sc,cy-ht[i][k].y*sc);
+      hx.stroke();hx.globalAlpha=1;}
+    const r=4;for(let i=0;i<3;i++){const bx=cx+hs.q[i].x*sc,by=cy-hs.q[i].y*sc;
+      const g=hx.createRadialGradient(bx,by,1,bx,by,r*3);g.addColorStop(0,bCol[i]);g.addColorStop(1,"transparent");
+      hx.fillStyle=g;hx.beginPath();hx.arc(bx,by,r*3,0,Math.PI*2);hx.fill();
+      hx.fillStyle=bCol[i];hx.beginPath();hx.arc(bx,by,r,0,Math.PI*2);hx.fill();}
     document.getElementById("hero-time").textContent=hTime.toFixed(3);
-    requestAnimationFrame(heroLoop);
-  }
-  requestAnimationFrame(heroLoop);
+    requestAnimationFrame(hLoop);}
+  requestAnimationFrame(hLoop);
 })();
 </script>
-
 </body>
 </html>
