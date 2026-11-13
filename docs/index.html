@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SymplecticThreeBody — Pairwise Kepler Symplectic Integrator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    canvas { touch-action: none; }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .pulse-dot { animation: pulse-subtle 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+
+  <!-- Top Navigation -->
+  <nav class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-sm">
+          &Omega;
+        </div>
+        <div>
+          <span class="font-bold tracking-tight text-white text-base">SymplecticThreeBody</span>
+          <span class="hidden sm:inline-block text-xs font-mono text-emerald-400 ml-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">Lean 4 + C99</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 text-sm font-medium">
+        <a href="#workbench" class="text-slate-300 hover:text-white transition">Workbench</a>
+        <a href="#theorems" class="text-slate-300 hover:text-white transition">Theorems</a>
+        <a href="#benchmark" class="text-slate-300 hover:text-white transition">Benchmark</a>
+        <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <span>GitHub</span>
+          <span class="text-xs">&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="max-w-7xl mx-auto px-6 pt-12 pb-8 text-center flex flex-col items-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+      Formally Verified in Lean 4 &bull; Machine-Checked (Zero Axioms)
+    </div>
+    <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white max-w-4xl leading-tight">
+      Symplectic Pairwise Two-Body Decomposition for the Three-Body Problem
+    </h1>
+    <p class="mt-4 text-base sm:text-lg text-slate-400 max-w-3xl">
+      Decomposing the gravitational 3-body system into three interconnected 2-body Kepler problems (Hernandez &amp; Bertschinger 2015). Machine-checked proofs in <strong>Lean 4</strong> paired with an IEEE-754 double-precision <strong>C99</strong> solver.
+    </p>
+    <div class="mt-3 text-xs font-mono text-slate-400">
+      Author: <strong class="text-slate-200">Mohammad Hossam Mohammed Ali Zahran</strong> (<code>MHMZAHRAN</code>) &bull; Menoufia National University
+    </div>
+  </header>
+
+  <!-- Interactive Simulation Workbench -->
+  <section id="workbench" class="max-w-7xl mx-auto px-6 py-6 w-full">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
+
+      <!-- Workbench Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>Live Interactive Symplectic Workbench</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Real-time pairwise Kepler integration executing 2nd-Order Strang (5 stages) &amp; 4th-Order Yoshida (15 stages).
+          </p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <button id="btn-reverse" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition active:scale-95 flex items-center gap-1.5 shadow">
+            <span>&larr;&rarr;</span> Reverse Time (h &rarr; -h)
+          </button>
+          <button id="btn-play" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition active:scale-95 shadow">
+            Pause
+          </button>
+          <button id="btn-reset" class="px-3.5 py-2 rounded-xl text-xs font-medium border border-slate-700 hover:bg-slate-800 text-slate-300 transition">
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Canvas & Telemetry Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left: Canvas & Settings (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 relative flex items-center justify-center overflow-hidden">
+            <canvas id="simCanvas" width="600" height="480" class="w-full rounded-lg bg-black"></canvas>
+
+            <div class="absolute top-5 left-5 px-3 py-1.5 rounded-lg bg-slate-900/85 backdrop-blur border border-slate-800 text-xs font-mono space-y-0.5">
+              <div>Time: <span id="lbl-time" class="font-bold text-white">0.000</span></div>
+              <div>Steps: <span id="lbl-steps" class="font-bold text-white">0</span></div>
+              <div>Direction: <span id="lbl-dir" class="font-bold text-emerald-400">FORWARD (+h)</span></div>
+            </div>
+          </div>
+
+          <!-- Controls Toolbar -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 text-xs">
+            <div>
+              <label class="block font-medium text-slate-400 mb-1">Orbit Preset</label>
+              <select id="sel-preset" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-1.5 focus:ring-1 focus:ring-emerald-500 font-medium">
+                <option value="fig8">Figure-8 (Chenciner-Montgomery)</option>
+                <option value="lagrange">Lagrange Equilateral Triangle</option>
+                <option value="euler">Euler Collinear Manifold</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-medium text-slate-400 mb-1">Integrator Order</label>
+              <select id="sel-order" class="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-1.5 focus:ring-1 focus:ring-emerald-500 font-medium">
+                <option value="4">4th-Order Yoshida (15 stages)</option>
+                <option value="2">2nd-Order Strang (5 stages)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-medium text-slate-400 mb-1">Substeps/Frame: <span id="lbl-speed-val" class="font-bold text-slate-200">20</span></label>
+              <input id="slider-speed" type="range" min="1" max="80" value="20" class="w-full accent-emerald-500 mt-1.5">
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Telemetry & Invariants (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              9 Poincaré Invariants Telemetry
+            </h3>
+            <span class="text-xs font-mono text-slate-500">IEEE-754 DP</span>
+          </div>
+
+          <div class="space-y-2.5 font-mono text-xs">
+            <!-- P_tot -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-200">Linear Momentum &Vert;&Delta;P&Vert;</div>
+                <div class="text-[11px] font-sans text-slate-500">3 invariants &bull; p₁ + p₂ + p₃ = P₀</div>
+              </div>
+              <span id="tel-p" class="text-emerald-400 font-bold text-sm">0.000e+0</span>
+            </div>
+
+            <!-- L_tot -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-200">Angular Momentum &Vert;&Delta;L&Vert;</div>
+                <div class="text-[11px] font-sans text-slate-500">3 invariants &bull; &sum; qᵢ &times; pᵢ = L₀</div>
+              </div>
+              <span id="tel-l" class="text-emerald-400 font-bold text-sm">0.000e+0</span>
+            </div>
+
+            <!-- K_tot -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-200">Barycentric Boost &Vert;&Delta;K&Vert;</div>
+                <div class="text-[11px] font-sans text-slate-500">3 invariants &bull; &sum; mᵢ qᵢ - t P_tot = K₀</div>
+              </div>
+              <span id="tel-k" class="text-emerald-400 font-bold text-sm">0.000e+0</span>
+            </div>
+
+            <!-- Energy Error -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-200">Relative Energy |&Delta;E / E₀|</div>
+                <div class="text-[11px] font-sans text-slate-500">Bounded Hamiltonian Oscillation</div>
+              </div>
+              <span id="tel-e" class="text-sky-400 font-bold text-sm">0.000e+0</span>
+            </div>
+
+            <!-- Reversal Error -->
+            <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-200">Time-Reversibility &Vert;&Delta;q_rev&Vert;</div>
+                <div class="text-[11px] font-sans text-slate-500">&Psi;_{-t} &comp; &Psi;_{t}(z) - z</div>
+              </div>
+              <span id="tel-rev" class="text-amber-400 font-bold text-sm">N/A</span>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 leading-relaxed mt-1">
+            <strong>Time-Reversibility Test:</strong> Click the <span class="text-amber-400 font-semibold">Reverse Time</span> button while running. The integrator flips $h \mapsto -h$, retracing the non-linear trajectory back to initial state at machine precision $\sim 10^{-14}$.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Machine-Checked Theorems Table -->
+  <section id="theorems" class="max-w-7xl mx-auto px-6 py-8 w-full">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-white">Machine-Checked Proofs in Lean 4</h2>
+        <p class="text-xs text-slate-400 mt-1">
+          Formalized in <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/SymplecticThreeBody.lean" target="_blank" class="text-emerald-400 hover:underline font-mono">SymplecticThreeBody.lean</a> with zero <code>sorry</code> axioms.
+        </p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-2.5 px-3">Theorem Identifier</th>
+              <th class="py-2.5 px-3 font-sans">Mathematical Property</th>
+              <th class="py-2.5 px-3">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-300">
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">triangle_closure</td>
+              <td class="py-2.5 px-3 font-sans">Topological loop closure: r₁₂ + r₂₃ + r₃₁ = 0</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">interconnected_two_body_decomposition</td>
+              <td class="py-2.5 px-3 font-sans">Exact Master Two-Body acceleration splitting perturbed by stiffness mismatch bracket</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">lagrange_equilateral_decoupling</td>
+              <td class="py-2.5 px-3 font-sans">&kappa;₁₂ = &kappa;₂₃ = &kappa;₃₁ &implies; 3 decoupled exact two-body Kepler problems of mass M</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">euler_collinear_decoupling</td>
+              <td class="py-2.5 px-3 font-sans">Euler collinear reduction with exact renormalized stiffness &kappa;_eff</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">toPairCoords_symplectic</td>
+              <td class="py-2.5 px-3 font-sans">Canonical coordinate embedding preserves 2-form: &omega;₆(CM) + &omega;₆(Rel) = &omega;₁₂</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">isSymplectic6_keplerMap</td>
+              <td class="py-2.5 px-3 font-sans">Universal f-g propagator with Wronskian f&gdot; - g&fdot; = 1 preserves &omega;₆ identically</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">isSymplectic18_strang</td>
+              <td class="py-2.5 px-3 font-sans">5-stage symmetric Strang composition &Psi;_h is globally symplectic on &Ropf;&sup1;&sup8;</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">totalMomentum_liftPair12</td>
+              <td class="py-2.5 px-3 font-sans">Exact linear momentum conservation across each pairwise Kepler step (3 invariants)</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">totalAngularMomentum_liftPair12_kepler</td>
+              <td class="py-2.5 px-3 font-sans">Exact total angular momentum conservation via central force Wronskian (3 invariants)</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">barycentricMoment_step12</td>
+              <td class="py-2.5 px-3 font-sans">Barycenter advances by exactly h &bull; P_tot across pairwise substeps (3 invariants)</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-bold text-emerald-400">strang_time_reversible</td>
+              <td class="py-2.5 px-3 font-sans">Strict time-reversibility: &Psi;_{-h}(&Psi;_h(z)) = z</td>
+              <td class="py-2.5 px-3 text-emerald-400 font-semibold">&check; Machine-Checked</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Empirical Benchmark Section -->
+  <section id="benchmark" class="max-w-7xl mx-auto px-6 py-6 w-full">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-white">C99 Empirical Verification Results</h2>
+        <p class="text-xs text-slate-400 mt-1">
+          Compiled under <code>-std=c99 -O3 -Wall -Wextra -Werror -pedantic -fno-fast-math</code> over $10^4$ steps ($h = 10^{-3}$) on the Figure-8 choreographic orbit.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-center">
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400 font-medium">Energy Oscillation</div>
+          <div class="text-lg font-bold font-mono text-sky-400 mt-1">9.93 &times; 10⁻¹³</div>
+          <div class="text-[10px] text-emerald-400 mt-1">Bounded Symplectic</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400 font-medium">Linear Momentum</div>
+          <div class="text-lg font-bold font-mono text-emerald-400 mt-1">1.96 &times; 10⁻¹⁴</div>
+          <div class="text-[10px] text-slate-500 mt-1">IEEE-754 DP Epsilon</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400 font-medium">Angular Momentum</div>
+          <div class="text-lg font-bold font-mono text-emerald-400 mt-1">4.99 &times; 10⁻¹⁴</div>
+          <div class="text-[10px] text-slate-500 mt-1">Exact Conserved</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400 font-medium">Barycentric Boost</div>
+          <div class="text-lg font-bold font-mono text-emerald-400 mt-1">1.00 &times; 10⁻¹²</div>
+          <div class="text-[10px] text-slate-500 mt-1">Drift Compensated</div>
+        </div>
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400 font-medium">Time Reversibility</div>
+          <div class="text-lg font-bold font-mono text-amber-400 mt-1">8.94 &times; 10⁻¹³</div>
+          <div class="text-[10px] text-emerald-400 mt-1">Exact Involution</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-800 bg-slate-950/80 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>
+        SymplecticThreeBody &bull; Author: <span class="text-slate-300 font-medium">Mohammad Hossam Mohammed Ali Zahran (MHMZAHRAN)</span>
+      </div>
+      <div>
+        Licensed under <a href="https://github.com/mohamedhossammohamed/symplectic-pairwise-3body/blob/main/LICENSE" target="_blank" class="text-slate-400 hover:text-white underline">MIT</a> &bull; Pinned Lean v4.14.0
+      </div>
+    </div>
+  </footer>
+
+  <!-- Simulation JavaScript -->
+  <script>
+    function v3(x, y, z) { return { x: x || 0, y: y || 0, z: z || 0 }; }
+    function v3_add(a, b) { return v3(a.x + b.x, a.y + b.y, a.z + b.z); }
+    function v3_sub(a, b) { return v3(a.x - b.x, a.y - b.y, a.z - b.z); }
+    function v3_scale(c, a) { return v3(c * a.x, c * a.y, c * a.z); }
+    function v3_dot(a, b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+    function v3_norm(a) { return Math.sqrt(v3_dot(a, a)); }
+    function v3_cross(a, b) {
+      return v3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    }
+
+    function stumpff_CS(z) {
+      if (Math.abs(z) < 1e-4) {
+        const z2 = z * z, z3 = z2 * z, z4 = z2 * z2;
+        const C = 0.5 - z / 24.0 + z2 / 720.0 - z3 / 40320.0 + z4 / 3628800.0;
+        const S = (1.0 / 6.0) - z / 120.0 + z2 / 5040.0 - z3 / 362880.0 + z4 / 39916800.0;
+        return { C, S };
+      } else if (z > 0.0) {
+        const sz = Math.sqrt(z);
+        return { C: (1.0 - Math.cos(sz)) / z, S: (sz - Math.sin(sz)) / (sz * z) };
+      } else {
+        const sz = Math.sqrt(-z);
+        return { C: (Math.cosh(sz) - 1.0) / (-z), S: (Math.sinh(sz) - sz) / (sz * (-z)) };
+      }
+    }
+
+    function step_pair_kepler(sys, i, j, tau) {
+      const mi = sys.m[i], mj = sys.m[j], mij = mi + mj;
+      const alpha = mi / mij, beta = 1.0 - alpha;
+      const mu_ij = (mi * mj) / mij;
+
+      let R_cm = v3_add(v3_scale(alpha, sys.q[i]), v3_scale(beta, sys.q[j]));
+      let P_cm = v3_add(sys.p[i], sys.p[j]);
+      let r0 = v3_sub(sys.q[i], sys.q[j]);
+      let p_rel = v3_sub(v3_scale(beta, sys.p[i]), v3_scale(alpha, sys.p[j]));
+
+      R_cm = v3_add(R_cm, v3_scale(tau / (2.0 * mij), P_cm));
+
+      let v0 = v3_scale(1.0 / (2.0 * mu_ij), p_rel);
+      const mu_grav = 0.5 * sys.G * mij;
+      const r0_mag = v3_norm(r0);
+      const v0_sq = v3_dot(v0, v0);
+      const rv0 = v3_dot(r0, v0);
+      const inv_a = (2.0 / r0_mag) - (v0_sq / mu_grav);
+      const sqrt_mu = Math.sqrt(mu_grav);
+
+      let chi = sqrt_mu * Math.abs(inv_a) * tau;
+      if (chi === 0.0) chi = sqrt_mu * tau / r0_mag;
+
+      for (let iter = 0; iter < 35; ++iter) {
+        const chi2 = chi * chi;
+        const z = inv_a * chi2;
+        const cs = stumpff_CS(z);
+        const F = r0_mag * chi + (rv0 / sqrt_mu) * chi2 * cs.C + (1.0 - inv_a * r0_mag) * chi2 * chi * cs.S - sqrt_mu * tau;
+        const dF = r0_mag + (rv0 / sqrt_mu) * chi * (1.0 - z * cs.S) + (1.0 - inv_a * r0_mag) * chi2 * cs.C;
+        const dchi = F / dF;
+        chi -= dchi;
+        if (Math.abs(dchi) <= 1e-15 * (1.0 + Math.abs(chi))) break;
+      }
+
+      const chi2 = chi * chi;
+      const z = inv_a * chi2;
+      const cs = stumpff_CS(z);
+      const f = 1.0 - (chi2 / r0_mag) * cs.C;
+      const g = tau - (chi2 * chi / sqrt_mu) * cs.S;
+      const r1 = v3_add(v3_scale(f, r0), v3_scale(g, v0));
+      const r1_mag = v3_norm(r1);
+
+      const fdot = (sqrt_mu / (r0_mag * r1_mag)) * (z * cs.S - 1.0) * chi;
+      const gdot = (1.0 + g * fdot) / f;
+
+      const v1 = v3_add(v3_scale(fdot, r0), v3_scale(gdot, v0));
+      const p_rel1 = v3_scale(2.0 * mu_ij, v1);
+
+      sys.q[i] = v3_add(R_cm, v3_scale(beta, r1));
+      sys.p[i] = v3_add(v3_scale(alpha, P_cm), p_rel1);
+      sys.q[j] = v3_sub(R_cm, v3_scale(alpha, r1));
+      sys.p[j] = v3_sub(P_cm, sys.p[i]);
+    }
+
+    function step_strang_2nd(sys, h) {
+      const h2 = 0.5 * h;
+      step_pair_kepler(sys, 0, 1, h2);
+      step_pair_kepler(sys, 1, 2, h2);
+      step_pair_kepler(sys, 2, 0, h);
+      step_pair_kepler(sys, 1, 2, h2);
+      step_pair_kepler(sys, 0, 1, h2);
+    }
+
+    function step_yoshida_4th(sys, h) {
+      const cbrt2 = 1.25992104989487316477;
+      const w1 = 1.0 / (2.0 - cbrt2);
+      const w0 = -cbrt2 / (2.0 - cbrt2);
+      step_strang_2nd(sys, w1 * h);
+      step_strang_2nd(sys, w0 * h);
+      step_strang_2nd(sys, w1 * h);
+    }
+
+    function total_energy(sys) {
+      let T = 0.0, V = 0.0;
+      for (let i = 0; i < 3; ++i) T += v3_dot(sys.p[i], sys.p[i]) / (2.0 * sys.m[i]);
+      for (let i = 0; i < 3; ++i) {
+        for (let j = i + 1; j < 3; ++j) {
+          const rij = v3_norm(v3_sub(sys.q[i], sys.q[j]));
+          V -= sys.G * sys.m[i] * sys.m[j] / rij;
+        }
+      }
+      return T + V;
+    }
+
+    function total_momentum(sys) {
+      return v3_add(v3_add(sys.p[0], sys.p[1]), sys.p[2]);
+    }
+
+    function total_angular_momentum(sys) {
+      return v3_add(
+        v3_add(v3_cross(sys.q[0], sys.p[0]), v3_cross(sys.q[1], sys.p[1])),
+        v3_cross(sys.q[2], sys.p[2])
+      );
+    }
+
+    function barycentric_boost(sys, t) {
+      const MR = v3_add(
+        v3_add(v3_scale(sys.m[0], sys.q[0]), v3_scale(sys.m[1], sys.q[1])),
+        v3_scale(sys.m[2], sys.q[2])
+      );
+      const P = total_momentum(sys);
+      return v3_sub(MR, v3_scale(t, P));
+    }
+
+    const presets = {
+      fig8: {
+        name: "Figure-8",
+        q: [v3(-0.97000436, 0.24308753, 0), v3(0, 0, 0), v3(0.97000436, -0.24308753, 0)],
+        p: [v3(0.466203685, 0.43236573, 0), v3(-0.93240737, -0.86473146, 0), v3(0.466203685, 0.43236573, 0)],
+        m: [1.0, 1.0, 1.0],
+        G: 1.0,
+        scale: 140
+      },
+      lagrange: {
+        name: "Lagrange Equilateral",
+        q: [v3(1.0, 0, 0), v3(-0.5, Math.sqrt(3)/2, 0), v3(-0.5, -Math.sqrt(3)/2, 0)],
+        p: [v3(0, 1.0, 0), v3(-Math.sqrt(3)/2, -0.5, 0), v3(Math.sqrt(3)/2, -0.5, 0)],
+        m: [1.0, 1.0, 1.0],
+        G: 1.0,
+        scale: 120
+      },
+      euler: {
+        name: "Euler Collinear",
+        q: [v3(-1.0, 0, 0), v3(0, 0, 0), v3(1.0, 0, 0)],
+        p: [v3(0, -0.6, 0), v3(0, 0, 0), v3(0, 0.6, 0)],
+        m: [1.0, 1.0, 1.0],
+        G: 1.0,
+        scale: 140
+      }
+    };
+
+    let sys = null, initialSys = null;
+    let E0 = 0, P0 = null, L0 = null, K0 = null;
+    let simTime = 0, stepCount = 0;
+    let isPlaying = true;
+    let dt = 1e-3, timeSign = 1;
+    let trails = [[], [], []];
+    const MAX_TRAIL = 400;
+
+    function cloneSys(s) {
+      return {
+        q: s.q.map(v => v3(v.x, v.y, v.z)),
+        p: s.p.map(v => v3(v.x, v.y, v.z)),
+        m: [...s.m],
+        G: s.G,
+        scale: s.scale
+      };
+    }
+
+    function initPreset(key) {
+      const p = presets[key];
+      sys = cloneSys(p);
+      initialSys = cloneSys(p);
+      E0 = total_energy(sys);
+      P0 = total_momentum(sys);
+      L0 = total_angular_momentum(sys);
+      K0 = barycentric_boost(sys, 0);
+      simTime = 0;
+      stepCount = 0;
+      timeSign = 1;
+      trails = [[], [], []];
+      document.getElementById("lbl-dir").textContent = "FORWARD (+h)";
+      document.getElementById("lbl-dir").className = "font-bold text-emerald-400";
+      document.getElementById("tel-rev").textContent = "N/A";
+    }
+
+    initPreset("fig8");
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+    const bodyColors = ["#38bdf8", "#f43f5e", "#a855f7"];
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const scale = sys.scale || 140;
+
+      for (let i = 0; i < 3; ++i) {
+        if (trails[i].length < 2) continue;
+        ctx.beginPath();
+        ctx.strokeStyle = bodyColors[i];
+        ctx.lineWidth = 1.8;
+        ctx.globalAlpha = 0.45;
+        ctx.moveTo(cx + trails[i][0].x * scale, cy - trails[i][0].y * scale);
+        for (let k = 1; k < trails[i].length; ++k) {
+          ctx.lineTo(cx + trails[i][k].x * scale, cy - trails[i][k].y * scale);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.lineWidth = 1.0;
+      ctx.setLineDash([4, 4]);
+      ctx.moveTo(cx + sys.q[0].x * scale, cy - sys.q[0].y * scale);
+      ctx.lineTo(cx + sys.q[1].x * scale, cy - sys.q[1].y * scale);
+      ctx.lineTo(cx + sys.q[2].x * scale, cy - sys.q[2].y * scale);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (let i = 0; i < 3; ++i) {
+        const bx = cx + sys.q[i].x * scale;
+        const by = cy - sys.q[i].y * scale;
+
+        const grad = ctx.createRadialGradient(bx, by, 2, bx, by, 16);
+        grad.addColorStop(0, bodyColors[i]);
+        grad.addColorStop(1, "transparent");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(bx, by, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = bodyColors[i];
+        ctx.beginPath();
+        ctx.arc(bx, by, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      if (isPlaying) {
+        const speed = parseInt(document.getElementById("slider-speed").value, 10);
+        const order = document.getElementById("sel-order").value;
+        const stepFn = (order === "4") ? step_yoshida_4th : step_strang_2nd;
+        const h = dt * timeSign;
+
+        for (let s = 0; s < speed; ++s) {
+          stepFn(sys, h);
+          simTime += h;
+          stepCount += (timeSign > 0 ? 1 : -1);
+
+          if (s % 2 === 0) {
+            for (let i = 0; i < 3; ++i) {
+              trails[i].push(v3(sys.q[i].x, sys.q[i].y, sys.q[i].z));
+              if (trails[i].length > MAX_TRAIL) trails[i].shift();
+            }
+          }
+        }
+
+        const curE = total_energy(sys);
+        const curP = total_momentum(sys);
+        const curL = total_angular_momentum(sys);
+        const curK = barycentric_boost(sys, simTime);
+
+        document.getElementById("tel-e").textContent = Math.abs((curE - E0) / E0).toExponential(3);
+        document.getElementById("tel-p").textContent = v3_norm(v3_sub(curP, P0)).toExponential(3);
+        document.getElementById("tel-l").textContent = v3_norm(v3_sub(curL, L0)).toExponential(3);
+        document.getElementById("tel-k").textContent = v3_norm(v3_sub(curK, K0)).toExponential(3);
+
+        document.getElementById("lbl-time").textContent = simTime.toFixed(3);
+        document.getElementById("lbl-steps").textContent = stepCount;
+
+        if (timeSign < 0 && Math.abs(simTime) < 1e-4) {
+          const rev_err = v3_norm(v3_sub(sys.q[0], initialSys.q[0]));
+          document.getElementById("tel-rev").textContent = rev_err.toExponential(3);
+        }
+      }
+
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById("btn-play").addEventListener("click", () => {
+      isPlaying = !isPlaying;
+      document.getElementById("btn-play").textContent = isPlaying ? "Pause" : "Resume";
+    });
+
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      initPreset(document.getElementById("sel-preset").value);
+    });
+
+    document.getElementById("sel-preset").addEventListener("change", (e) => {
+      initPreset(e.target.value);
+    });
+
+    document.getElementById("slider-speed").addEventListener("input", (e) => {
+      document.getElementById("lbl-speed-val").textContent = e.target.value;
+    });
+
+    document.getElementById("btn-reverse").addEventListener("click", () => {
+      timeSign = -timeSign;
+      const isFwd = timeSign > 0;
+      document.getElementById("lbl-dir").textContent = isFwd ? "FORWARD (+h)" : "REVERSED (-h)";
+      document.getElementById("lbl-dir").className = "font-bold " + (isFwd ? "text-emerald-400" : "text-amber-400");
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
